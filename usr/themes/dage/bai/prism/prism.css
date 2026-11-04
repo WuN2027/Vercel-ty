@@ -1,0 +1,197 @@
+/* 代码块样式 */
+pre code {
+  display: block !important;
+  font-family: 'Fira Code', Consolas, Monaco, 'Courier New', monospace !important;
+  font-size: 13px !important;
+  line-height: 1.7 !important;
+  color: var(--color-chunhei, #000) !important;
+
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+  tab-size: 4 !important;
+  text-align: left !important;
+
+  background-color: rgba(136, 173, 166, 0.15) !important;
+  border: 1px solid var(--bj-shuise, #88ADA6) !important;
+  border-radius: 4px !important;
+
+  max-height: 300px !important;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+}
+
+pre {
+  margin: 1em 0 !important;
+  background: transparent !important;
+  border: none !important;
+  position: relative !important;
+}
+
+/* 工具栏容器 */
+.code-toolbar {
+  position: absolute !important;
+  top: 6px !important;
+  right: 24px !important;
+  display: flex !important;
+  gap: 5px !important;
+  z-index: 99 !important;
+}
+
+/* 标签 */
+.code-copy-btn,
+.code-lang-tag {
+  background: rgba(136, 173, 166, 0.2) !important;
+  border: 1px solid var(--bj-shuise, #88ADA6) !important;
+  border-radius: 3px !important;
+  padding: 3px 8px !important;
+  font-size: 12px !important;
+  user-select: none !important;
+  line-height: 1.2 !important;
+  height: auto !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+  transition: none !important;
+  white-space: nowrap !important;
+}
+
+.code-copy-btn {
+  cursor: pointer !important;
+  color: #333 !important;
+  order: 1 !important;
+}
+
+.code-copy-btn:hover {
+  background: rgba(136, 173, 166, 0.3) !important;
+}
+
+.code-lang-tag {
+  color: #555 !important;
+  font-weight: bold !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  order: 2 !important;
+}
+
+/* 行内代码 */
+:not(pre) > code {
+  display: inline !important;
+  padding: 0.2em 0.4em !important;
+  background: rgba(136, 173, 166, 0.15) !important;
+  border: 1px solid var(--bj-shuise, #88ADA6) !important;
+  border-radius: 3px !important;
+  font-family: Consolas, monospace !important;
+  color: var(--color-chunhei, #000) !important;
+}
+
+/* 滚动条样式 */
+pre code {
+  scrollbar-width: thin !important;
+  scrollbar-color: #777 rgba(136, 173, 166, 0.15) !important;
+}
+pre code::-webkit-scrollbar {
+  width: 10px !important;
+  height: 10px !important;
+}
+pre code::-webkit-scrollbar-thumb {
+  background: #777 !important;
+  border-radius: 5px !important;
+  border: 2px solid transparent !important;
+  background-clip: padding-box !important;
+}
+pre code::-webkit-scrollbar-thumb:hover {
+  background: #555 !important;
+  border: 2px solid transparent !important;
+  background-clip: padding-box !important;
+}
+pre code::-webkit-scrollbar-track {
+  background: rgba(136, 173, 166, 0.12) !important;
+  border-radius: 5px !important;
+}
+pre code::-webkit-scrollbar-corner {
+  background: transparent !important;
+}
+
+/* 分隔线 */
+/* 代码块左侧行号样式 */
+/* 分隔线 */
+
+/* 代码容器 */
+pre code.has-line-numbers,
+pre code {
+  padding: 0 !important;
+  white-space: normal !important;
+}
+
+/* 每一行 */
+.code-line {
+  display: flex !important;
+  align-items: stretch !important;
+  line-height: 1.7 !important;
+  min-height: 1.7em !important;
+  box-sizing: border-box !important;
+}
+
+/* 首行顶部补齐 */
+.code-line:first-child {
+  padding-top: 0.6em !important;
+}
+
+/* 末行底部补齐 */
+.code-line:last-child {
+  padding-bottom: 0.6em !important;
+}
+
+/* 行号列 */
+.line-number {
+  display: flex !important;
+  align-items: center !important;
+  align-self: stretch !important;
+  justify-content: flex-end !important;
+  flex-shrink: 0 !important;
+  min-width: 3em !important;
+  padding: 0 0.8em 0 0.6em !important;
+  text-align: right !important;
+  color: #888 !important;
+  background-color: rgba(136, 173, 166, 0.08) !important;
+  border-right: 1px solid rgba(136, 173, 166, 0.3) !important;
+  user-select: none !important;
+  font-family: Consolas, Monaco, monospace !important;
+  font-size: 12px !important;
+}
+
+/* 代码内容列 */
+.line-content {
+  display: block !important;
+  flex: 1 !important;
+  padding: 0 1em !important;
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+  font-family: Consolas, Monaco, monospace !important;
+  font-size: 12px !important;
+}
+
+/* 分隔线 */
+/* 语法高亮颜色 */
+/* 分隔线 */
+pre code .token.comment { color: #6a9955 !important; font-style: normal !important; }
+pre code .token.url { color: #6a9955 !important; font-style: normal !important; }
+pre code .token.string { color: #a31515 !important; }
+pre code .token.number { color: #098658 !important; }
+pre code .token.keyword { color: #0000ff !important; font-weight: bold !important; }
+pre code .token.builtin { color: #267f99 !important; }
+pre code .token.function { color: #795e26 !important; }
+pre code .token.variable { color: #001080 !important; }
+pre code .token.operator { color: #000000 !important; }
+pre code .token.tag { color: #800000 !important; }
+pre code .token.attribute { color: #e50000 !important; }
+pre code .token.selector { color: #800000 !important; }
+pre code .token.property { color: #e50000 !important; }
+pre code .token.important { color: #0000ff !important; font-weight: bold !important; }
+pre code .token.doctype { color: #0000ff !important; }
+pre code .token.color { color: #795e26 !important; }

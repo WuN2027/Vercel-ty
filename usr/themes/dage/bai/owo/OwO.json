@@ -1,0 +1,1492 @@
+{
+  " ": {
+    "type": "image",
+    "container": [
+      {
+        "data": ":(狗头保命)",
+        "text": "狗头保命",
+        "icon": "bai/owo/biaoqing/狗头保命.gif"
+      },
+      {
+        "data": ":(猥琐)",
+        "text": "猥琐",
+        "icon": "bai/owo/biaoqing/猥琐.gif"
+      },
+      {
+        "data": ":(摸鱼)",
+        "text": "摸鱼",
+        "icon": "bai/owo/biaoqing/摸鱼.gif"
+      },
+      {
+        "data": ":(杀马特)",
+        "text": "杀马特",
+        "icon": "bai/owo/biaoqing/杀马特.gif"
+      },
+      {
+        "data": ":(acute)",
+        "text": "acute",
+        "icon": "bai/owo/biaoqing/acute.gif"
+      },
+      {
+        "data": ":(aggressive)",
+        "text": "aggressive",
+        "icon": "bai/owo/biaoqing/aggressive.gif"
+      },
+      {
+        "data": ":(agree)",
+        "text": "agree",
+        "icon": "bai/owo/biaoqing/agree.gif"
+      },
+      {
+        "data": ":(aikido)",
+        "text": "aikido",
+        "icon": "bai/owo/biaoqing/aikido.gif"
+      },
+      {
+        "data": ":(air_kiss)",
+        "text": "air_kiss",
+        "icon": "bai/owo/biaoqing/air_kiss.gif"
+      },
+      {
+        "data": ":(alcoholic)",
+        "text": "alcoholic",
+        "icon": "bai/owo/biaoqing/alcoholic.gif"
+      },
+      {
+        "data": ":(angel)",
+        "text": "angel",
+        "icon": "bai/owo/biaoqing/angel.gif"
+      },
+      {
+        "data": ":(angry2)",
+        "text": "angry2",
+        "icon": "bai/owo/biaoqing/angry2.gif"
+      },
+      {
+        "data": ":(assassin)",
+        "text": "assassin",
+        "icon": "bai/owo/biaoqing/assassin.gif"
+      },
+      {
+        "data": ":(bad)",
+        "text": "bad",
+        "icon": "bai/owo/biaoqing/bad.gif"
+      },
+      {
+        "data": ":(banned)",
+        "text": "banned",
+        "icon": "bai/owo/biaoqing/banned.gif"
+      },
+      {
+        "data": ":(bb)",
+        "text": "bb",
+        "icon": "bai/owo/biaoqing/bb.gif"
+      },
+      {
+        "data": ":(bb2)",
+        "text": "bb2",
+        "icon": "bai/owo/biaoqing/bb2.gif"
+      },
+      {
+        "data": ":(beach)",
+        "text": "beach",
+        "icon": "bai/owo/biaoqing/beach.gif"
+      },
+      {
+        "data": ":(beee)",
+        "text": "beee",
+        "icon": "bai/owo/biaoqing/beee.gif"
+      },
+      {
+        "data": ":(beta)",
+        "text": "beta",
+        "icon": "bai/owo/biaoqing/beta.gif"
+      },
+      {
+        "data": ":(big_boss)",
+        "text": "big_boss",
+        "icon": "bai/owo/biaoqing/big_boss.gif"
+      },
+      {
+        "data": ":(blind)",
+        "text": "blind",
+        "icon": "bai/owo/biaoqing/blind.gif"
+      },
+      {
+        "data": ":(blum)",
+        "text": "blum",
+        "icon": "bai/owo/biaoqing/blum.gif"
+      },
+      {
+        "data": ":(blum2)",
+        "text": "blum2",
+        "icon": "bai/owo/biaoqing/blum2.gif"
+      },
+      {
+        "data": ":(blum3)",
+        "text": "blum3",
+        "icon": "bai/owo/biaoqing/blum3.gif"
+      },
+      {
+        "data": ":(blush)",
+        "text": "blush",
+        "icon": "bai/owo/biaoqing/blush.gif"
+      },
+      {
+        "data": ":(blush2)",
+        "text": "blush2",
+        "icon": "bai/owo/biaoqing/blush2.gif"
+      },
+      {
+        "data": ":(boast)",
+        "text": "boast",
+        "icon": "bai/owo/biaoqing/boast.gif"
+      },
+      {
+        "data": ":(bomb)",
+        "text": "bomb",
+        "icon": "bai/owo/biaoqing/bomb.gif"
+      },
+      {
+        "data": ":(boredom)",
+        "text": "boredom",
+        "icon": "bai/owo/biaoqing/boredom.gif"
+      },
+      {
+        "data": ":(bravo)",
+        "text": "bravo",
+        "icon": "bai/owo/biaoqing/bravo.gif"
+      },
+      {
+        "data": ":(brunette)",
+        "text": "brunette",
+        "icon": "bai/owo/biaoqing/brunette.gif"
+      },
+      {
+        "data": ":(buba)",
+        "text": "buba",
+        "icon": "bai/owo/biaoqing/buba.gif"
+      },
+      {
+        "data": ":(buba_phone)",
+        "text": "buba_phone",
+        "icon": "bai/owo/biaoqing/buba_phone.gif"
+      },
+      {
+        "data": ":(butcher)",
+        "text": "butcher",
+        "icon": "bai/owo/biaoqing/butcher.gif"
+      },
+      {
+        "data": ":(bye)",
+        "text": "bye",
+        "icon": "bai/owo/biaoqing/bye.gif"
+      },
+      {
+        "data": ":(close_tema)",
+        "text": "close_tema",
+        "icon": "bai/owo/biaoqing/close_tema.gif"
+      },
+      {
+        "data": ":(cool)",
+        "text": "cool",
+        "icon": "bai/owo/biaoqing/cool.gif"
+      },
+      {
+        "data": ":(cool2)",
+        "text": "cool2",
+        "icon": "bai/owo/biaoqing/cool2.gif"
+      },
+      {
+        "data": ":(cray2)",
+        "text": "cray2",
+        "icon": "bai/owo/biaoqing/cray2.gif"
+      },
+      {
+        "data": ":(crazy)",
+        "text": "crazy",
+        "icon": "bai/owo/biaoqing/crazy.gif"
+      },
+      {
+        "data": ":(crazy_pilot)",
+        "text": "crazy_pilot",
+        "icon": "bai/owo/biaoqing/crazy_pilot.gif"
+      },
+      {
+        "data": ":(cry)",
+        "text": "cry",
+        "icon": "bai/owo/biaoqing/cry.gif"
+      },
+      {
+        "data": ":(curtsey)",
+        "text": "curtsey",
+        "icon": "bai/owo/biaoqing/curtsey.gif"
+      },
+      {
+        "data": ":(dance)",
+        "text": "dance",
+        "icon": "bai/owo/biaoqing/dance.gif"
+      },
+      {
+        "data": ":(dance2)",
+        "text": "dance2",
+        "icon": "bai/owo/biaoqing/dance2.gif"
+      },
+      {
+        "data": ":(dance3)",
+        "text": "dance3",
+        "icon": "bai/owo/biaoqing/dance3.gif"
+      },
+      {
+        "data": ":(dash)",
+        "text": "dash",
+        "icon": "bai/owo/biaoqing/dash.gif"
+      },
+      {
+        "data": ":(dash2)",
+        "text": "dash2",
+        "icon": "bai/owo/biaoqing/dash2.gif"
+      },
+      {
+        "data": ":(dash3)",
+        "text": "dash3",
+        "icon": "bai/owo/biaoqing/dash3.gif"
+      },
+      {
+        "data": ":(declare)",
+        "text": "declare",
+        "icon": "bai/owo/biaoqing/declare.gif"
+      },
+      {
+        "data": ":(ded_moroz)",
+        "text": "ded_moroz",
+        "icon": "bai/owo/biaoqing/ded_moroz.gif"
+      },
+      {
+        "data": ":(ded_snegurochka)",
+        "text": "ded_snegurochka",
+        "icon": "bai/owo/biaoqing/ded_snegurochka.gif"
+      },
+      {
+        "data": ":(ded_snegurochka2)",
+        "text": "ded_snegurochka2",
+        "icon": "bai/owo/biaoqing/ded_snegurochka2.gif"
+      },
+      {
+        "data": ":(derisive)",
+        "text": "derisive",
+        "icon": "bai/owo/biaoqing/derisive.gif"
+      },
+      {
+        "data": ":(diablo)",
+        "text": "diablo",
+        "icon": "bai/owo/biaoqing/diablo.gif"
+      },
+      {
+        "data": ":(dinamo)",
+        "text": "dinamo",
+        "icon": "bai/owo/biaoqing/dinamo.gif"
+      },
+      {
+        "data": ":(don-t_mention)",
+        "text": "don-t_mention",
+        "icon": "bai/owo/biaoqing/don-t_mention.gif"
+      },
+      {
+        "data": ":(download)",
+        "text": "download",
+        "icon": "bai/owo/biaoqing/download.gif"
+      },
+      {
+        "data": ":(drag)",
+        "text": "drag",
+        "icon": "bai/owo/biaoqing/drag.gif"
+      },
+      {
+        "data": ":(drinks)",
+        "text": "drinks",
+        "icon": "bai/owo/biaoqing/drinks.gif"
+      },
+      {
+        "data": ":(dwarf)",
+        "text": "dwarf",
+        "icon": "bai/owo/biaoqing/dwarf.gif"
+      },
+      {
+        "data": ":(elf)",
+        "text": "elf",
+        "icon": "bai/owo/biaoqing/elf.gif"
+      },
+      {
+        "data": ":(fans)",
+        "text": "fans",
+        "icon": "bai/owo/biaoqing/fans.gif"
+      },
+      {
+        "data": ":(fan_1)",
+        "text": "fan_1",
+        "icon": "bai/owo/biaoqing/fan_1.gif"
+      },
+      {
+        "data": ":(feminist)",
+        "text": "feminist",
+        "icon": "bai/owo/biaoqing/feminist.gif"
+      },
+      {
+        "data": ":(fie)",
+        "text": "fie",
+        "icon": "bai/owo/biaoqing/fie.gif"
+      },
+      {
+        "data": ":(first_move)",
+        "text": "first_move",
+        "icon": "bai/owo/biaoqing/first_move.gif"
+      },
+      {
+        "data": ":(flirt)",
+        "text": "flirt",
+        "icon": "bai/owo/biaoqing/flirt.gif"
+      },
+      {
+        "data": ":(flood)",
+        "text": "flood",
+        "icon": "bai/owo/biaoqing/flood.gif"
+      },
+      {
+        "data": ":(focus)",
+        "text": "focus",
+        "icon": "bai/owo/biaoqing/focus.gif"
+      },
+      {
+        "data": ":(fool)",
+        "text": "fool",
+        "icon": "bai/owo/biaoqing/fool.gif"
+      },
+      {
+        "data": ":(friends)",
+        "text": "friends",
+        "icon": "bai/owo/biaoqing/friends.gif"
+      },
+      {
+        "data": ":(fuck)",
+        "text": "fuck",
+        "icon": "bai/owo/biaoqing/fuck.gif"
+      },
+      {
+        "data": ":(fuk)",
+        "text": "fuk",
+        "icon": "bai/owo/biaoqing/fuk.gif"
+      },
+      {
+        "data": ":(gamer)",
+        "text": "gamer",
+        "icon": "bai/owo/biaoqing/gamer.gif"
+      },
+      {
+        "data": ":(gamer2)",
+        "text": "gamer2",
+        "icon": "bai/owo/biaoqing/gamer2.gif"
+      },
+      {
+        "data": ":(gamer3)",
+        "text": "gamer3",
+        "icon": "bai/owo/biaoqing/gamer3.gif"
+      },
+      {
+        "data": ":(girl_blum)",
+        "text": "girl_blum",
+        "icon": "bai/owo/biaoqing/girl_blum.gif"
+      },
+      {
+        "data": ":(girl_cray)",
+        "text": "girl_cray",
+        "icon": "bai/owo/biaoqing/girl_cray.gif"
+      },
+      {
+        "data": ":(girl_cray2)",
+        "text": "girl_cray2",
+        "icon": "bai/owo/biaoqing/girl_cray2.gif"
+      },
+      {
+        "data": ":(girl_cray3)",
+        "text": "girl_cray3",
+        "icon": "bai/owo/biaoqing/girl_cray3.gif"
+      },
+      {
+        "data": ":(girl_crazy)",
+        "text": "girl_crazy",
+        "icon": "bai/owo/biaoqing/girl_crazy.gif"
+      },
+      {
+        "data": ":(girl_dance)",
+        "text": "girl_dance",
+        "icon": "bai/owo/biaoqing/girl_dance.gif"
+      },
+      {
+        "data": ":(girl_devil)",
+        "text": "girl_devil",
+        "icon": "bai/owo/biaoqing/girl_devil.gif"
+      },
+      {
+        "data": ":(girl_drink)",
+        "text": "girl_drink",
+        "icon": "bai/owo/biaoqing/girl_drink.gif"
+      },
+      {
+        "data": ":(girl_haha)",
+        "text": "girl_haha",
+        "icon": "bai/owo/biaoqing/girl_haha.gif"
+      },
+      {
+        "data": ":(girl_hide)",
+        "text": "girl_hide",
+        "icon": "bai/owo/biaoqing/girl_hide.gif"
+      },
+      {
+        "data": ":(girl_hospital)",
+        "text": "girl_hospital",
+        "icon": "bai/owo/biaoqing/girl_hospital.gif"
+      },
+      {
+        "data": ":(girl_impossible)",
+        "text": "girl_impossible",
+        "icon": "bai/owo/biaoqing/girl_impossible.gif"
+      },
+      {
+        "data": ":(girl_in_love)",
+        "text": "girl_in_love",
+        "icon": "bai/owo/biaoqing/girl_in_love.gif"
+      },
+      {
+        "data": ":(girl_mad)",
+        "text": "girl_mad",
+        "icon": "bai/owo/biaoqing/girl_mad.gif"
+      },
+      {
+        "data": ":(girl_pinkglassesf)",
+        "text": "girl_pinkglassesf",
+        "icon": "bai/owo/biaoqing/girl_pinkglassesf.gif"
+      },
+      {
+        "data": ":(girl_prepare_fish)",
+        "text": "girl_prepare_fish",
+        "icon": "bai/owo/biaoqing/girl_prepare_fish.gif"
+      },
+      {
+        "data": ":(girl_sad)",
+        "text": "girl_sad",
+        "icon": "bai/owo/biaoqing/girl_sad.gif"
+      },
+      {
+        "data": ":(girl_sigh)",
+        "text": "girl_sigh",
+        "icon": "bai/owo/biaoqing/girl_sigh.gif"
+      },
+      {
+        "data": ":(girl_smile)",
+        "text": "girl_smile",
+        "icon": "bai/owo/biaoqing/girl_smile.gif"
+      },
+      {
+        "data": ":(girl_to_take_umbrage)",
+        "text": "girl_to_take_umbrage",
+        "icon": "bai/owo/biaoqing/girl_to_take_umbrage.gif"
+      },
+      {
+        "data": ":(girl_wacko)",
+        "text": "girl_wacko",
+        "icon": "bai/owo/biaoqing/girl_wacko.gif"
+      },
+      {
+        "data": ":(girl_werewolf)",
+        "text": "girl_werewolf",
+        "icon": "bai/owo/biaoqing/girl_werewolf.gif"
+      },
+      {
+        "data": ":(girl_wink)",
+        "text": "girl_wink",
+        "icon": "bai/owo/biaoqing/girl_wink.gif"
+      },
+      {
+        "data": ":(girl_witch)",
+        "text": "girl_witch",
+        "icon": "bai/owo/biaoqing/girl_witch.gif"
+      },
+      {
+        "data": ":(give_heart)",
+        "text": "give_heart",
+        "icon": "bai/owo/biaoqing/give_heart.gif"
+      },
+      {
+        "data": ":(give_rose)",
+        "text": "give_rose",
+        "icon": "bai/owo/biaoqing/give_rose.gif"
+      },
+      {
+        "data": ":(good)",
+        "text": "good",
+        "icon": "bai/owo/biaoqing/good.gif"
+      },
+      {
+        "data": ":(good2)",
+        "text": "good2",
+        "icon": "bai/owo/biaoqing/good2.gif"
+      },
+      {
+        "data": ":(good3)",
+        "text": "good3",
+        "icon": "bai/owo/biaoqing/good3.gif"
+      },
+      {
+        "data": ":(grin)",
+        "text": "grin",
+        "icon": "bai/owo/biaoqing/grin.gif"
+      },
+      {
+        "data": ":(haha)",
+        "text": "haha",
+        "icon": "bai/owo/biaoqing/haha.gif"
+      },
+      {
+        "data": ":(hang1)",
+        "text": "hang1",
+        "icon": "bai/owo/biaoqing/hang1.gif"
+      },
+      {
+        "data": ":(hang2)",
+        "text": "hang2",
+        "icon": "bai/owo/biaoqing/hang2.gif"
+      },
+      {
+        "data": ":(heart)",
+        "text": "heart",
+        "icon": "bai/owo/biaoqing/heart.gif"
+      },
+      {
+        "data": ":(heat)",
+        "text": "heat",
+        "icon": "bai/owo/biaoqing/heat.gif"
+      },
+      {
+        "data": ":(help)",
+        "text": "help",
+        "icon": "bai/owo/biaoqing/help.gif"
+      },
+      {
+        "data": ":(hi)",
+        "text": "hi",
+        "icon": "bai/owo/biaoqing/hi.gif"
+      },
+      {
+        "data": ":(hunter)",
+        "text": "hunter",
+        "icon": "bai/owo/biaoqing/hunter.gif"
+      },
+      {
+        "data": ":(hysteric)",
+        "text": "hysteric",
+        "icon": "bai/owo/biaoqing/hysteric.gif"
+      },
+      {
+        "data": ":(i-m_so_happy)",
+        "text": "i-m_so_happy",
+        "icon": "bai/owo/biaoqing/i-m_so_happy.gif"
+      },
+      {
+        "data": ":(ireful)",
+        "text": "ireful",
+        "icon": "bai/owo/biaoqing/ireful.gif"
+      },
+      {
+        "data": ":(ireful2)",
+        "text": "ireful2",
+        "icon": "bai/owo/biaoqing/ireful2.gif"
+      },
+      {
+        "data": ":(jester)",
+        "text": "jester",
+        "icon": "bai/owo/biaoqing/jester.gif"
+      },
+      {
+        "data": ":(king)",
+        "text": "king",
+        "icon": "bai/owo/biaoqing/king.gif"
+      },
+      {
+        "data": ":(king2)",
+        "text": "king2",
+        "icon": "bai/owo/biaoqing/king2.gif"
+      },
+      {
+        "data": ":(kiss)",
+        "text": "kiss",
+        "icon": "bai/owo/biaoqing/kiss.gif"
+      },
+      {
+        "data": ":(kiss2)",
+        "text": "kiss2",
+        "icon": "bai/owo/biaoqing/kiss2.gif"
+      },
+      {
+        "data": ":(kiss3)",
+        "text": "kiss3",
+        "icon": "bai/owo/biaoqing/kiss3.gif"
+      },
+      {
+        "data": ":(laugh)",
+        "text": "laugh",
+        "icon": "bai/owo/biaoqing/laugh.gif"
+      },
+      {
+        "data": ":(laugh1)",
+        "text": "laugh1",
+        "icon": "bai/owo/biaoqing/laugh1.gif"
+      },
+      {
+        "data": ":(laugh2)",
+        "text": "laugh2",
+        "icon": "bai/owo/biaoqing/laugh2.gif"
+      },
+      {
+        "data": ":(laugh3)",
+        "text": "laugh3",
+        "icon": "bai/owo/biaoqing/laugh3.gif"
+      },
+      {
+        "data": ":(lazy)",
+        "text": "lazy",
+        "icon": "bai/owo/biaoqing/lazy.gif"
+      },
+      {
+        "data": ":(lazy1)",
+        "text": "lazy1",
+        "icon": "bai/owo/biaoqing/lazy1.gif"
+      },
+      {
+        "data": ":(lazy2)",
+        "text": "lazy2",
+        "icon": "bai/owo/biaoqing/lazy2.gif"
+      },
+      {
+        "data": ":(locomotive)",
+        "text": "locomotive",
+        "icon": "bai/owo/biaoqing/locomotive.gif"
+      },
+      {
+        "data": ":(lol)",
+        "text": "lol",
+        "icon": "bai/owo/biaoqing/lol.gif"
+      },
+      {
+        "data": ":(mad)",
+        "text": "mad",
+        "icon": "bai/owo/biaoqing/mad.gif"
+      },
+      {
+        "data": ":(mail)",
+        "text": "mail",
+        "icon": "bai/owo/biaoqing/mail.gif"
+      },
+      {
+        "data": ":(mamba)",
+        "text": "mamba",
+        "icon": "bai/owo/biaoqing/mamba.gif"
+      },
+      {
+        "data": ":(man_in_love)",
+        "text": "man_in_love",
+        "icon": "bai/owo/biaoqing/man_in_love.gif"
+      },
+      {
+        "data": ":(mda)",
+        "text": "mda",
+        "icon": "bai/owo/biaoqing/mda.gif"
+      },
+      {
+        "data": ":(meeting)",
+        "text": "meeting",
+        "icon": "bai/owo/biaoqing/meeting.gif"
+      },
+      {
+        "data": ":(mega_shok)",
+        "text": "mega_shok",
+        "icon": "bai/owo/biaoqing/mega_shok.gif"
+      },
+      {
+        "data": ":(meowth)",
+        "text": "meowth",
+        "icon": "bai/owo/biaoqing/meowth.gif"
+      },
+      {
+        "data": ":(moil)",
+        "text": "moil",
+        "icon": "bai/owo/biaoqing/moil.gif"
+      },
+      {
+        "data": ":(morpheus)",
+        "text": "morpheus",
+        "icon": "bai/owo/biaoqing/morpheus.gif"
+      },
+      {
+        "data": ":(mosking)",
+        "text": "mosking",
+        "icon": "bai/owo/biaoqing/mosking.gif"
+      },
+      {
+        "data": ":(music)",
+        "text": "music",
+        "icon": "bai/owo/biaoqing/music.gif"
+      },
+      {
+        "data": ":(negative)",
+        "text": "negative",
+        "icon": "bai/owo/biaoqing/negative.gif"
+      },
+      {
+        "data": ":(neo)",
+        "text": "neo",
+        "icon": "bai/owo/biaoqing/neo.gif"
+      },
+      {
+        "data": ":(new_russian)",
+        "text": "new_russian",
+        "icon": "bai/owo/biaoqing/new_russian.gif"
+      },
+      {
+        "data": ":(nhl)",
+        "text": "nhl",
+        "icon": "bai/owo/biaoqing/nhl.gif"
+      },
+      {
+        "data": ":(nhl2)",
+        "text": "nhl2",
+        "icon": "bai/owo/biaoqing/nhl2.gif"
+      },
+      {
+        "data": ":(nhl3)",
+        "text": "nhl3",
+        "icon": "bai/owo/biaoqing/nhl3.gif"
+      },
+      {
+        "data": ":(nhl_checking)",
+        "text": "nhl_checking",
+        "icon": "bai/owo/biaoqing/nhl_checking.gif"
+      },
+      {
+        "data": ":(nhl_crach)",
+        "text": "nhl_crach",
+        "icon": "bai/owo/biaoqing/nhl_crach.gif"
+      },
+      {
+        "data": ":(nhl_fight)",
+        "text": "nhl_fight",
+        "icon": "bai/owo/biaoqing/nhl_fight.gif"
+      },
+      {
+        "data": ":(no)",
+        "text": "no",
+        "icon": "bai/owo/biaoqing/no.gif"
+      },
+      {
+        "data": ":(no1)",
+        "text": "no1",
+        "icon": "bai/owo/biaoqing/no1.gif"
+      },
+      {
+        "data": ":(no2)",
+        "text": "no2",
+        "icon": "bai/owo/biaoqing/no2.gif"
+      },
+      {
+        "data": ":(nono)",
+        "text": "nono",
+        "icon": "bai/owo/biaoqing/nono.gif"
+      },
+      {
+        "data": ":(not_i)",
+        "text": "not_i",
+        "icon": "bai/owo/biaoqing/not_i.gif"
+      },
+      {
+        "data": ":(nyam)",
+        "text": "nyam",
+        "icon": "bai/owo/biaoqing/nyam.gif"
+      },
+      {
+        "data": ":(offtopic)",
+        "text": "offtopic",
+        "icon": "bai/owo/biaoqing/offtopic.gif"
+      },
+      {
+        "data": ":(ok)",
+        "text": "ok",
+        "icon": "bai/owo/biaoqing/ok.gif"
+      },
+      {
+        "data": ":(on_the_quiet)",
+        "text": "on_the_quiet",
+        "icon": "bai/owo/biaoqing/on_the_quiet.gif"
+      },
+      {
+        "data": ":(on_the_quiet2)",
+        "text": "on_the_quiet2",
+        "icon": "bai/owo/biaoqing/on_the_quiet2.gif"
+      },
+      {
+        "data": ":(orc)",
+        "text": "orc",
+        "icon": "bai/owo/biaoqing/orc.gif"
+      },
+      {
+        "data": ":(padonak)",
+        "text": "padonak",
+        "icon": "bai/owo/biaoqing/padonak.gif"
+      },
+      {
+        "data": ":(paint)",
+        "text": "paint",
+        "icon": "bai/owo/biaoqing/paint.gif"
+      },
+      {
+        "data": ":(paladin)",
+        "text": "paladin",
+        "icon": "bai/owo/biaoqing/paladin.gif"
+      },
+      {
+        "data": ":(paratrooper)",
+        "text": "paratrooper",
+        "icon": "bai/owo/biaoqing/paratrooper.gif"
+      },
+      {
+        "data": ":(pardon)",
+        "text": "pardon",
+        "icon": "bai/owo/biaoqing/pardon.gif"
+      },
+      {
+        "data": ":(parting)",
+        "text": "parting",
+        "icon": "bai/owo/biaoqing/parting.gif"
+      },
+      {
+        "data": ":(parting2)",
+        "text": "parting2",
+        "icon": "bai/owo/biaoqing/parting2.gif"
+      },
+      {
+        "data": ":(party)",
+        "text": "party",
+        "icon": "bai/owo/biaoqing/party.gif"
+      },
+      {
+        "data": ":(patsak)",
+        "text": "patsak",
+        "icon": "bai/owo/biaoqing/patsak.gif"
+      },
+      {
+        "data": ":(ph34r)",
+        "text": "ph34r",
+        "icon": "bai/owo/biaoqing/ph34r.gif"
+      },
+      {
+        "data": ":(phi)",
+        "text": "phi",
+        "icon": "bai/owo/biaoqing/phi.gif"
+      },
+      {
+        "data": ":(pig_ball)",
+        "text": "pig_ball",
+        "icon": "bai/owo/biaoqing/pig_ball.gif"
+      },
+      {
+        "data": ":(pilot)",
+        "text": "pilot",
+        "icon": "bai/owo/biaoqing/pilot.gif"
+      },
+      {
+        "data": ":(pioneer)",
+        "text": "pioneer",
+        "icon": "bai/owo/biaoqing/pioneer.gif"
+      },
+      {
+        "data": ":(pioneer_smoke)",
+        "text": "pioneer_smoke",
+        "icon": "bai/owo/biaoqing/pioneer_smoke.gif"
+      },
+      {
+        "data": ":(pleasantry)",
+        "text": "pleasantry",
+        "icon": "bai/owo/biaoqing/pleasantry.gif"
+      },
+      {
+        "data": ":(pogranichnik)",
+        "text": "pogranichnik",
+        "icon": "bai/owo/biaoqing/pogranichnik.gif"
+      },
+      {
+        "data": ":(polling)",
+        "text": "polling",
+        "icon": "bai/owo/biaoqing/polling.gif"
+      },
+      {
+        "data": ":(pooh)",
+        "text": "pooh",
+        "icon": "bai/owo/biaoqing/pooh.gif"
+      },
+      {
+        "data": ":(pooh_birth_day)",
+        "text": "pooh_birth_day",
+        "icon": "bai/owo/biaoqing/pooh_birth_day.gif"
+      },
+      {
+        "data": ":(pooh_door)",
+        "text": "pooh_door",
+        "icon": "bai/owo/biaoqing/pooh_door.gif"
+      },
+      {
+        "data": ":(pooh_go)",
+        "text": "pooh_go",
+        "icon": "bai/owo/biaoqing/pooh_go.gif"
+      },
+      {
+        "data": ":(pooh_honey)",
+        "text": "pooh_honey",
+        "icon": "bai/owo/biaoqing/pooh_honey.gif"
+      },
+      {
+        "data": ":(pooh_lol)",
+        "text": "pooh_lol",
+        "icon": "bai/owo/biaoqing/pooh_lol.gif"
+      },
+      {
+        "data": ":(pooh_on_ball)",
+        "text": "pooh_on_ball",
+        "icon": "bai/owo/biaoqing/pooh_on_ball.gif"
+      },
+      {
+        "data": ":(popcorm)",
+        "text": "popcorm",
+        "icon": "bai/owo/biaoqing/popcorm.gif"
+      },
+      {
+        "data": ":(popcorm1)",
+        "text": "popcorm1",
+        "icon": "bai/owo/biaoqing/popcorm1.gif"
+      },
+      {
+        "data": ":(prankster)",
+        "text": "prankster",
+        "icon": "bai/owo/biaoqing/prankster.gif"
+      },
+      {
+        "data": ":(prankster2)",
+        "text": "prankster2",
+        "icon": "bai/owo/biaoqing/prankster2.gif"
+      },
+      {
+        "data": ":(preved)",
+        "text": "preved",
+        "icon": "bai/owo/biaoqing/preved.gif"
+      },
+      {
+        "data": ":(protest)",
+        "text": "protest",
+        "icon": "bai/owo/biaoqing/protest.gif"
+      },
+      {
+        "data": ":(punish)",
+        "text": "punish",
+        "icon": "bai/owo/biaoqing/punish.gif"
+      },
+      {
+        "data": ":(queen)",
+        "text": "queen",
+        "icon": "bai/owo/biaoqing/queen.gif"
+      },
+      {
+        "data": ":(rabbi)",
+        "text": "rabbi",
+        "icon": "bai/owo/biaoqing/rabbi.gif"
+      },
+      {
+        "data": ":(rap)",
+        "text": "rap",
+        "icon": "bai/owo/biaoqing/rap.gif"
+      },
+      {
+        "data": ":(read)",
+        "text": "read",
+        "icon": "bai/owo/biaoqing/read.gif"
+      },
+      {
+        "data": ":(resent)",
+        "text": "resent",
+        "icon": "bai/owo/biaoqing/resent.gif"
+      },
+      {
+        "data": ":(rofl)",
+        "text": "rofl",
+        "icon": "bai/owo/biaoqing/rofl.gif"
+      },
+      {
+        "data": ":(rtfm)",
+        "text": "rtfm",
+        "icon": "bai/owo/biaoqing/rtfm.gif"
+      },
+      {
+        "data": ":(russian)",
+        "text": "russian",
+        "icon": "bai/owo/biaoqing/russian.gif"
+      },
+      {
+        "data": ":(russian_roulette)",
+        "text": "russian_roulette",
+        "icon": "bai/owo/biaoqing/russian_roulette.gif"
+      },
+      {
+        "data": ":(sad)",
+        "text": "sad",
+        "icon": "bai/owo/biaoqing/sad.gif"
+      },
+      {
+        "data": ":(santa)",
+        "text": "santa",
+        "icon": "bai/owo/biaoqing/santa.gif"
+      },
+      {
+        "data": ":(santa2)",
+        "text": "santa2",
+        "icon": "bai/owo/biaoqing/santa2.gif"
+      },
+      {
+        "data": ":(santa3)",
+        "text": "santa3",
+        "icon": "bai/owo/biaoqing/santa3.gif"
+      },
+      {
+        "data": ":(sarcastic)",
+        "text": "sarcastic",
+        "icon": "bai/owo/biaoqing/sarcastic.gif"
+      },
+      {
+        "data": ":(sarcastic_blum)",
+        "text": "sarcastic_blum",
+        "icon": "bai/owo/biaoqing/sarcastic_blum.gif"
+      },
+      {
+        "data": ":(sarcastic_hand)",
+        "text": "sarcastic_hand",
+        "icon": "bai/owo/biaoqing/sarcastic_hand.gif"
+      },
+      {
+        "data": ":(scare)",
+        "text": "scare",
+        "icon": "bai/owo/biaoqing/scare.gif"
+      },
+      {
+        "data": ":(scare2)",
+        "text": "scare2",
+        "icon": "bai/owo/biaoqing/scare2.gif"
+      },
+      {
+        "data": ":(scaut)",
+        "text": "scaut",
+        "icon": "bai/owo/biaoqing/scaut.gif"
+      },
+      {
+        "data": ":(scaut_en)",
+        "text": "scaut_en",
+        "icon": "bai/owo/biaoqing/scaut_en.gif"
+      },
+      {
+        "data": ":(scenic)",
+        "text": "scenic",
+        "icon": "bai/owo/biaoqing/scenic.gif"
+      },
+      {
+        "data": ":(sclerosis)",
+        "text": "sclerosis",
+        "icon": "bai/owo/biaoqing/sclerosis.gif"
+      },
+      {
+        "data": ":(scratch_one-s_head)",
+        "text": "scratch_one-s_head",
+        "icon": "bai/owo/biaoqing/scratch_one-s_head.gif"
+      },
+      {
+        "data": ":(search)",
+        "text": "search",
+        "icon": "bai/owo/biaoqing/search.gif"
+      },
+      {
+        "data": ":(secret)",
+        "text": "secret",
+        "icon": "bai/owo/biaoqing/secret.gif"
+      },
+      {
+        "data": ":(sensored)",
+        "text": "sensored",
+        "icon": "bai/owo/biaoqing/sensored.gif"
+      },
+      {
+        "data": ":(shablon_01)",
+        "text": "shablon_01",
+        "icon": "bai/owo/biaoqing/shablon_01.gif"
+      },
+      {
+        "data": ":(shablon_02)",
+        "text": "shablon_02",
+        "icon": "bai/owo/biaoqing/shablon_02.gif"
+      },
+      {
+        "data": ":(shablon_03)",
+        "text": "shablon_03",
+        "icon": "bai/owo/biaoqing/shablon_03.gif"
+      },
+      {
+        "data": ":(shablon_04)",
+        "text": "shablon_04",
+        "icon": "bai/owo/biaoqing/shablon_04.gif"
+      },
+      {
+        "data": ":(shock)",
+        "text": "shock",
+        "icon": "bai/owo/biaoqing/shock.gif"
+      },
+      {
+        "data": ":(shout)",
+        "text": "shout",
+        "icon": "bai/owo/biaoqing/shout.gif"
+      },
+      {
+        "data": ":(skull)",
+        "text": "skull",
+        "icon": "bai/owo/biaoqing/skull.gif"
+      },
+      {
+        "data": ":(slow)",
+        "text": "slow",
+        "icon": "bai/owo/biaoqing/slow.gif"
+      },
+      {
+        "data": ":(smile)",
+        "text": "smile",
+        "icon": "bai/owo/biaoqing/smile.gif"
+      },
+      {
+        "data": ":(smoke)",
+        "text": "smoke",
+        "icon": "bai/owo/biaoqing/smoke.gif"
+      },
+      {
+        "data": ":(snegurochka)",
+        "text": "snegurochka",
+        "icon": "bai/owo/biaoqing/snegurochka.gif"
+      },
+      {
+        "data": ":(snooks)",
+        "text": "snooks",
+        "icon": "bai/owo/biaoqing/snooks.gif"
+      },
+      {
+        "data": ":(sorry)",
+        "text": "sorry",
+        "icon": "bai/owo/biaoqing/sorry.gif"
+      },
+      {
+        "data": ":(sorry2)",
+        "text": "sorry2",
+        "icon": "bai/owo/biaoqing/sorry2.gif"
+      },
+      {
+        "data": ":(spam)",
+        "text": "spam",
+        "icon": "bai/owo/biaoqing/spam.gif"
+      },
+      {
+        "data": ":(spam_en)",
+        "text": "spam_en",
+        "icon": "bai/owo/biaoqing/spam_en.gif"
+      },
+      {
+        "data": ":(spartak)",
+        "text": "spartak",
+        "icon": "bai/owo/biaoqing/spartak.gif"
+      },
+      {
+        "data": ":(spiteful)",
+        "text": "spiteful",
+        "icon": "bai/owo/biaoqing/spiteful.gif"
+      },
+      {
+        "data": ":(spruce_up)",
+        "text": "spruce_up",
+        "icon": "bai/owo/biaoqing/spruce_up.gif"
+      },
+      {
+        "data": ":(stink)",
+        "text": "stink",
+        "icon": "bai/owo/biaoqing/stink.gif"
+      },
+      {
+        "data": ":(stinker)",
+        "text": "stinker",
+        "icon": "bai/owo/biaoqing/stinker.gif"
+      },
+      {
+        "data": ":(stop)",
+        "text": "stop",
+        "icon": "bai/owo/biaoqing/stop.gif"
+      },
+      {
+        "data": ":(suicide)",
+        "text": "suicide",
+        "icon": "bai/owo/biaoqing/suicide.gif"
+      },
+      {
+        "data": ":(suicide2)",
+        "text": "suicide2",
+        "icon": "bai/owo/biaoqing/suicide2.gif"
+      },
+      {
+        "data": ":(sun_bespectacled)",
+        "text": "sun_bespectacled",
+        "icon": "bai/owo/biaoqing/sun_bespectacled.gif"
+      },
+      {
+        "data": ":(superman)",
+        "text": "superman",
+        "icon": "bai/owo/biaoqing/superman.gif"
+      },
+      {
+        "data": ":(superman2)",
+        "text": "superman2",
+        "icon": "bai/owo/biaoqing/superman2.gif"
+      },
+      {
+        "data": ":(superstition)",
+        "text": "superstition",
+        "icon": "bai/owo/biaoqing/superstition.gif"
+      },
+      {
+        "data": ":(swoon)",
+        "text": "swoon",
+        "icon": "bai/owo/biaoqing/swoon.gif"
+      },
+      {
+        "data": ":(take_example)",
+        "text": "take_example",
+        "icon": "bai/owo/biaoqing/take_example.gif"
+      },
+      {
+        "data": ":(taunt)",
+        "text": "taunt",
+        "icon": "bai/owo/biaoqing/taunt.gif"
+      },
+      {
+        "data": ":(tease)",
+        "text": "tease",
+        "icon": "bai/owo/biaoqing/tease.gif"
+      },
+      {
+        "data": ":(telephone)",
+        "text": "telephone",
+        "icon": "bai/owo/biaoqing/telephone.gif"
+      },
+      {
+        "data": ":(tender)",
+        "text": "tender",
+        "icon": "bai/owo/biaoqing/tender.gif"
+      },
+      {
+        "data": ":(thank_you)",
+        "text": "thank_you",
+        "icon": "bai/owo/biaoqing/thank_you.gif"
+      },
+      {
+        "data": ":(this)",
+        "text": "this",
+        "icon": "bai/owo/biaoqing/this.gif"
+      },
+      {
+        "data": ":(tomato)",
+        "text": "tomato",
+        "icon": "bai/owo/biaoqing/tomato.gif"
+      },
+      {
+        "data": ":(tomato2)",
+        "text": "tomato2",
+        "icon": "bai/owo/biaoqing/tomato2.gif"
+      },
+      {
+        "data": ":(tommy)",
+        "text": "tommy",
+        "icon": "bai/owo/biaoqing/tommy.gif"
+      },
+      {
+        "data": ":(to_babruysk)",
+        "text": "to_babruysk",
+        "icon": "bai/owo/biaoqing/to_babruysk.gif"
+      },
+      {
+        "data": ":(to_become_senile)",
+        "text": "to_become_senile",
+        "icon": "bai/owo/biaoqing/to_become_senile.gif"
+      },
+      {
+        "data": ":(to_clue)",
+        "text": "to_clue",
+        "icon": "bai/owo/biaoqing/to_clue.gif"
+      },
+      {
+        "data": ":(to_keep_order)",
+        "text": "to_keep_order",
+        "icon": "bai/owo/biaoqing/to_keep_order.gif"
+      },
+      {
+        "data": ":(to_pick_ones_nose)",
+        "text": "to_pick_ones_nose",
+        "icon": "bai/owo/biaoqing/to_pick_ones_nose.gif"
+      },
+      {
+        "data": ":(to_pick_ones_nose2)",
+        "text": "to_pick_ones_nose2",
+        "icon": "bai/owo/biaoqing/to_pick_ones_nose2.gif"
+      },
+      {
+        "data": ":(to_pick_ones_nose3)",
+        "text": "to_pick_ones_nose3",
+        "icon": "bai/owo/biaoqing/to_pick_ones_nose3.gif"
+      },
+      {
+        "data": ":(to_pick_ones_nose_eat)",
+        "text": "to_pick_ones_nose_eat",
+        "icon": "bai/owo/biaoqing/to_pick_ones_nose_eat.gif"
+      },
+      {
+        "data": ":(to_take_umbrage)",
+        "text": "to_take_umbrage",
+        "icon": "bai/owo/biaoqing/to_take_umbrage.gif"
+      },
+      {
+        "data": ":(training1)",
+        "text": "training1",
+        "icon": "bai/owo/biaoqing/training1.gif"
+      },
+      {
+        "data": ":(treaten)",
+        "text": "treaten",
+        "icon": "bai/owo/biaoqing/treaten.gif"
+      },
+      {
+        "data": ":(triniti)",
+        "text": "triniti",
+        "icon": "bai/owo/biaoqing/triniti.gif"
+      },
+      {
+        "data": ":(umnik)",
+        "text": "umnik",
+        "icon": "bai/owo/biaoqing/umnik.gif"
+      },
+      {
+        "data": ":(umnik2)",
+        "text": "umnik2",
+        "icon": "bai/owo/biaoqing/umnik2.gif"
+      },
+      {
+        "data": ":(unknw)",
+        "text": "unknw",
+        "icon": "bai/owo/biaoqing/unknw.gif"
+      },
+      {
+        "data": ":(unsure)",
+        "text": "unsure",
+        "icon": "bai/owo/biaoqing/unsure.gif"
+      },
+      {
+        "data": ":(vampire)",
+        "text": "vampire",
+        "icon": "bai/owo/biaoqing/vampire.gif"
+      },
+      {
+        "data": ":(vava)",
+        "text": "vava",
+        "icon": "bai/owo/biaoqing/vava.gif"
+      },
+      {
+        "data": ":(victory)",
+        "text": "victory",
+        "icon": "bai/owo/biaoqing/victory.gif"
+      },
+      {
+        "data": ":(vinsent)",
+        "text": "vinsent",
+        "icon": "bai/owo/biaoqing/vinsent.gif"
+      },
+      {
+        "data": ":(wacko)",
+        "text": "wacko",
+        "icon": "bai/owo/biaoqing/wacko.gif"
+      },
+      {
+        "data": ":(wacko1)",
+        "text": "wacko1",
+        "icon": "bai/owo/biaoqing/wacko1.gif"
+      },
+      {
+        "data": ":(wacko2)",
+        "text": "wacko2",
+        "icon": "bai/owo/biaoqing/wacko2.gif"
+      },
+      {
+        "data": ":(warning)",
+        "text": "warning",
+        "icon": "bai/owo/biaoqing/warning.gif"
+      },
+      {
+        "data": ":(whistle)",
+        "text": "whistle",
+        "icon": "bai/owo/biaoqing/whistle.gif"
+      },
+      {
+        "data": ":(wild)",
+        "text": "wild",
+        "icon": "bai/owo/biaoqing/wild.gif"
+      },
+      {
+        "data": ":(wink)",
+        "text": "wink",
+        "icon": "bai/owo/biaoqing/wink.gif"
+      },
+      {
+        "data": ":(wink2)",
+        "text": "wink2",
+        "icon": "bai/owo/biaoqing/wink2.gif"
+      },
+      {
+        "data": ":(wizard)",
+        "text": "wizard",
+        "icon": "bai/owo/biaoqing/wizard.gif"
+      },
+      {
+        "data": ":(yahoo)",
+        "text": "yahoo",
+        "icon": "bai/owo/biaoqing/yahoo.gif"
+      },
+      {
+        "data": ":(yes)",
+        "text": "yes",
+        "icon": "bai/owo/biaoqing/yes.gif"
+      },
+      {
+        "data": ":(yess)",
+        "text": "yess",
+        "icon": "bai/owo/biaoqing/yess.gif"
+      },
+      {
+        "data": ":(yu)",
+        "text": "yu",
+        "icon": "bai/owo/biaoqing/yu.gif"
+      }
+    ]
+  }
+}

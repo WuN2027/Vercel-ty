@@ -1,0 +1,8 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+  <path d="M814.933333 914.666667H214.4c-54.933333 0-99.733333-44.8-99.733333-99.733334V214.4c0-54.933333 44.8-99.733333 99.733333-99.733333h600.533333c54.933333 0 99.733333 44.8 99.733334 99.733333v600.533333c0 54.933333-44.8 99.733333-99.733334 99.733334z" fill="#607D8B"/>
+  <circle cx="362" cy="512" r="66" fill="#FDFDFD"/>
+  <circle cx="512" cy="512" r="66" fill="#FDFDFD"/>
+  <circle cx="662" cy="512" r="66" fill="#FDFDFD"/>
+</svg>
