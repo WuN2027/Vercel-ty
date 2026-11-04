@@ -34,14 +34,15 @@ require_once 'Typecho/Common.php';
 Typecho_Common::init();
 
 /** 定义数据库参数 */
-$db = new Typecho_Db('Pdo_Mysql', 'typecho_');
+$db = new Typecho_Db('Mysqli', 'typecho_');
 $db->addServer(array (
-  'host' => '数据库地址',
-  'user' => '数据库用户名',
-  'password' => '数据库密码',
+  'host' => 'rm-bp1628311519am6n3io.mysql.rds.aliyuncs.com',
+  'user' => 'typecho',
+  'password' => 'Shi8675007',
   'charset' => 'utf8mb4',
   'port' => '3306',
-  'database' => '数据库名称',
-  'engine' => 'MyISAM',
+  'database' => 'ty',
+  'engine' => 'InnoDB',
 ), Typecho_Db::READ | Typecho_Db::WRITE);
 Typecho_Db::set($db);
+define('__TYPECHO_DEBUG__', true);
