@@ -34,7 +34,7 @@ require_once 'Typecho/Common.php';
 Typecho_Common::init();
 
 /** 定义数据库参数 */
-$db = new Typecho_Db('Pdo_Mysql', 'typecho_');
+$db = new Typecho_Db('Mysqli', 'typecho_');
 $db->addServer(array (
   'host' => 'rm-bp1628311519am6n3io.mysql.rds.aliyuncs.com',
   'user' => 'typecho',
@@ -45,3 +45,4 @@ $db->addServer(array (
   'engine' => 'MyISAM',
 ), Typecho_Db::READ | Typecho_Db::WRITE);
 Typecho_Db::set($db);
+define('__TYPECHO_DEBUG__', true);
