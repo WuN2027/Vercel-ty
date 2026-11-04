@@ -1,0 +1,567 @@
+.qiwi-admin-preview-shortcodes .qiwi-fold {
+    margin: 1em 0;
+    padding: 12px 14px;
+    background: #f8f9fb;
+    border: 1px solid #d9dfe7;
+    border-radius: 8px;
+}
+
+.qiwi-admin-preview-shortcodes .qiwi-fold > summary {
+    cursor: pointer;
+    color: #202328;
+    font-weight: 600;
+    line-height: 1.6;
+}
+
+.qiwi-admin-preview-shortcodes .qiwi-fold[open] > summary {
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #d9dfe7;
+}
+
+.qiwi-admin-preview-shortcodes .qiwi-fold-no-divider[open] > summary {
+    margin-bottom: 10px;
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+
+.qiwi-admin-preview-shortcodes .qiwi-fold-body {
+    overflow: hidden;
+}
+
+.qiwi-admin-preview-shortcodes .qiwi-fold[open] > .qiwi-fold-body {
+    animation: qiwi-admin-fold-unfold 320ms cubic-bezier(0.22, 1, 0.36, 1);
+    transform-origin: top;
+}
+
+.qiwi-admin-preview-shortcodes .qiwi-fold-body > *:last-child {
+    margin-bottom: 0;
+}
+
+@keyframes qiwi-admin-fold-unfold {
+    0% {
+        opacity: 0;
+        transform: translateY(-4px) scaleY(0.98);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scaleY(1);
+    }
+}
+
+.qiwi-admin-preview-shortcodes .qiwi-text-red { color: #d64545; }
+.qiwi-admin-preview-shortcodes .qiwi-text-orange { color: #d97a20; }
+.qiwi-admin-preview-shortcodes .qiwi-text-yellow { color: #a87900; }
+.qiwi-admin-preview-shortcodes .qiwi-text-green { color: #2f8f4e; }
+.qiwi-admin-preview-shortcodes .qiwi-text-cyan { color: #168c96; }
+.qiwi-admin-preview-shortcodes .qiwi-text-blue { color: #286bd6; }
+.qiwi-admin-preview-shortcodes .qiwi-text-purple { color: #7b55c7; }
+
+.qiwi-admin-preview-shortcodes .qiwi-mark {
+    padding: 0.08em 0.32em;
+    border-radius: 4px;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+}
+
+.qiwi-admin-preview-shortcodes .qiwi-mark-red { background: rgba(214, 69, 69, 0.16); }
+.qiwi-admin-preview-shortcodes .qiwi-mark-orange { background: rgba(217, 122, 32, 0.16); }
+.qiwi-admin-preview-shortcodes .qiwi-mark-yellow { background: rgba(230, 176, 0, 0.2); }
+.qiwi-admin-preview-shortcodes .qiwi-mark-green { background: rgba(47, 143, 78, 0.16); }
+.qiwi-admin-preview-shortcodes .qiwi-mark-cyan { background: rgba(22, 140, 150, 0.16); }
+.qiwi-admin-preview-shortcodes .qiwi-mark-blue { background: rgba(40, 107, 214, 0.16); }
+.qiwi-admin-preview-shortcodes .qiwi-mark-purple { background: rgba(123, 85, 199, 0.16); }
+
+.qiwi-admin-preview-shortcodes .qiwi-admin-attachment {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 220px;
+    margin: 5px 0;
+    padding: 8px 11px;
+    border: 1px solid #d9dfe7;
+    border-radius: 14px;
+    background: #f8f9fb;
+    color: #202328;
+    vertical-align: middle;
+}
+
+.qiwi-admin-attachment-icon {
+    display: inline-grid;
+    flex: 0 0 36px;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(54, 120, 212, .12);
+    color: #3678d4;
+}
+.qiwi-admin-attachment-icon svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+.qiwi-admin-attachment > span:last-child { display: grid; gap: 2px; }
+.qiwi-admin-attachment strong { font-size: 12px; }
+.qiwi-admin-attachment small { color: #6d7785; font-size: 11px; }
+
+#file-list .qiwi-secure-attachment-insert {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin: 0 7px 0 3px;
+    padding: 1px 6px;
+    border: 1px solid #cfd7e2;
+    border-radius: 999px;
+    background: #f7f9fc;
+    color: #3678d4;
+    cursor: pointer;
+    font-size: 11px;
+    line-height: 1.5;
+    vertical-align: middle;
+}
+
+#file-list .qiwi-secure-attachment-insert:hover,
+#file-list .qiwi-secure-attachment-insert:focus { border-color: #3678d4; background: #fff; }
+#file-list .qiwi-secure-attachment-insert svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+.qiwi-wmd-button span {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 20px !important;
+    height: 20px !important;
+    background: #202328 !important;
+    border-radius: 4px;
+    color: #fff;
+    font: 700 12px/1 Arial, sans-serif;
+}
+
+#wmd-button-bar {
+    position: relative;
+}
+
+.qiwi-editor-insert-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 30;
+    width: min(560px, calc(100% - 16px));
+    max-height: min(70vh, 520px);
+    margin: 0;
+    padding: 12px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #d9dfe7;
+    border-radius: 8px;
+    box-shadow: 0 10px 28px rgba(32, 35, 40, 0.12);
+    box-sizing: border-box;
+}
+
+.qiwi-editor-insert-menu[hidden] {
+    display: none;
+}
+
+.qiwi-editor-tool-group + .qiwi-editor-tool-group {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #edf0f4;
+}
+
+.qiwi-editor-tool-title {
+    margin-bottom: 8px;
+    color: #5d6673;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.qiwi-editor-tool-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.qiwi-editor-tool-button {
+    min-height: 30px;
+    padding: 5px 10px;
+    border: 1px solid #d9dfe7;
+    border-radius: 6px;
+    background: #f8f9fb;
+    color: #202328;
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.qiwi-editor-tool-button:hover,
+.qiwi-editor-tool-button:focus {
+    border-color: #9aa6b5;
+    background: #fff;
+}
+
+.qiwi-plog-editor[hidden] {
+    display: none;
+}
+
+.qiwi-plog-editor {
+    margin: 14px 0 18px;
+    padding: 14px;
+    border: 1px solid #d9dfe7;
+    border-radius: 8px;
+    background: #fff;
+    box-sizing: border-box;
+}
+
+.qiwi-plog-editor-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.qiwi-plog-editor-head > div:first-child {
+    display: grid;
+    gap: 3px;
+}
+
+.qiwi-plog-editor-head strong {
+    color: #202328;
+    font-size: 14px;
+}
+
+.qiwi-plog-editor-head span {
+    color: #6d7785;
+    font-size: 12px;
+}
+
+.qiwi-plog-tabs {
+    display: inline-flex;
+    gap: 4px;
+    padding: 3px;
+    border: 1px solid #d9dfe7;
+    border-radius: 8px;
+    background: #f8f9fb;
+}
+
+.qiwi-plog-tab {
+    min-height: 30px;
+    padding: 4px 12px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #4b5563;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.qiwi-plog-tab.is-active {
+    background: #202328;
+    color: #fff;
+}
+
+.qiwi-plog-pane {
+    display: none;
+}
+
+.qiwi-plog-pane.is-active {
+    display: block;
+}
+
+.qiwi-plog-fields,
+.qiwi-plog-photo-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.qiwi-plog-fields label,
+.qiwi-plog-photo-fields label {
+    display: grid;
+    gap: 5px;
+    color: #4b5563;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.qiwi-plog-fields input,
+.qiwi-plog-fields select,
+.qiwi-plog-fields textarea,
+.qiwi-plog-photo-fields input,
+.qiwi-plog-photo-fields select,
+.qiwi-plog-photo-fields textarea,
+.qiwi-plog-raw textarea {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    border: 1px solid #cfd6df;
+    border-radius: 6px;
+    background: #fff;
+    color: #202328;
+    font-size: 13px;
+}
+
+.qiwi-plog-fields input,
+.qiwi-plog-fields select,
+.qiwi-plog-photo-fields input,
+.qiwi-plog-photo-fields select {
+    min-height: 32px;
+    padding: 5px 8px;
+}
+
+.qiwi-plog-fields textarea,
+.qiwi-plog-photo-fields textarea,
+.qiwi-plog-raw textarea {
+    padding: 8px;
+    line-height: 1.55;
+    resize: vertical;
+}
+
+.qiwi-plog-wide {
+    grid-column: 1 / -1;
+}
+
+.qiwi-plog-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.qiwi-plog-button,
+.qiwi-plog-photo-actions button {
+    min-height: 30px;
+    border: 1px solid #d9dfe7;
+    border-radius: 6px;
+    background: #f8f9fb;
+    color: #202328;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.qiwi-plog-button {
+    padding: 5px 10px;
+}
+
+.qiwi-plog-button.is-primary {
+    border-color: #202328;
+    background: #202328;
+    color: #fff;
+}
+
+.qiwi-plog-button:hover,
+.qiwi-plog-button:focus,
+.qiwi-plog-photo-actions button:hover,
+.qiwi-plog-photo-actions button:focus {
+    border-color: #9aa6b5;
+    background: #fff;
+}
+
+.qiwi-plog-button.is-primary:hover,
+.qiwi-plog-button.is-primary:focus {
+    border-color: #202328;
+    background: #343941;
+    color: #fff;
+}
+
+.qiwi-plog-photo-list {
+    display: grid;
+    gap: 12px;
+}
+
+.qiwi-plog-empty {
+    padding: 18px;
+    border: 1px dashed #cfd6df;
+    border-radius: 8px;
+    color: #6d7785;
+    text-align: center;
+}
+
+.qiwi-plog-photo {
+    overflow: hidden;
+    border: 1px solid #e1e6ed;
+    border-radius: 8px;
+    background: #fafbfc;
+}
+
+.qiwi-plog-photo.is-dragging {
+    opacity: 0.48;
+}
+
+.qiwi-plog-photo-summary {
+    display: grid;
+    grid-template-columns: 26px 58px minmax(0, 1fr) 24px;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.qiwi-plog-photo-summary:hover,
+.qiwi-plog-photo-summary:focus {
+    background: #fff;
+}
+
+.qiwi-plog-photo-drag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 32px;
+    border-radius: 6px;
+    color: #8b96a5;
+    cursor: grab;
+}
+
+.qiwi-plog-photo-drag:active {
+    cursor: grabbing;
+}
+
+.qiwi-plog-photo-preview {
+    width: 58px;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    border-radius: 6px;
+    background: #edf0f4;
+    color: #7a8491;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.qiwi-plog-photo-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.qiwi-plog-photo-title {
+    display: grid;
+    min-width: 0;
+    gap: 2px;
+}
+
+.qiwi-plog-photo-title strong,
+.qiwi-plog-photo-title em {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.qiwi-plog-photo-title strong {
+    color: #202328;
+    font-size: 13px;
+}
+
+.qiwi-plog-photo-title em {
+    color: #778291;
+    font-size: 12px;
+    font-style: normal;
+}
+
+.qiwi-plog-photo-arrow {
+    color: #8b96a5;
+    text-align: center;
+    transition: transform 160ms ease;
+}
+
+.qiwi-plog-photo.is-open .qiwi-plog-photo-arrow {
+    transform: rotate(180deg);
+}
+
+.qiwi-plog-photo-editor {
+    display: none;
+    padding: 0 12px 12px;
+}
+
+.qiwi-plog-photo.is-open .qiwi-plog-photo-editor {
+    display: block;
+}
+
+.qiwi-plog-photo-top {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin: 2px 0 10px;
+}
+
+.qiwi-plog-photo-actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 5px;
+}
+
+.qiwi-plog-photo-actions button {
+    width: 30px;
+    padding: 0;
+}
+
+.qiwi-plog-raw-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+    color: #6d7785;
+    font-size: 12px;
+}
+
+.qiwi-plog-raw-head strong {
+    color: #202328;
+}
+
+.qiwi-plog-raw .wmd-panel {
+    margin: 0;
+}
+
+.qiwi-plog-raw #wmd-button-bar {
+    margin-top: 0;
+}
+
+.qiwi-plog-raw textarea {
+    min-height: 620px;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 12px;
+}
+
+.qiwi-plog-editor-page #wmd-preview,
+.qiwi-plog-editor-page .wmd-preview {
+    display: none !important;
+}
+
+@media (max-width: 640px) {
+    .qiwi-plog-editor {
+        padding: 12px;
+    }
+
+    .qiwi-plog-editor-head,
+    .qiwi-plog-raw-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .qiwi-plog-tabs {
+        width: 100%;
+    }
+
+    .qiwi-plog-tab {
+        flex: 1;
+    }
+
+    .qiwi-plog-fields,
+    .qiwi-plog-photo-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .qiwi-plog-photo-summary {
+        grid-template-columns: 24px 50px minmax(0, 1fr) 22px;
+        gap: 8px;
+    }
+
+    .qiwi-plog-photo-preview {
+        width: 50px;
+    }
+}

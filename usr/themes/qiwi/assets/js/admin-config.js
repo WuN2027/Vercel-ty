@@ -1,0 +1,3650 @@
+(function() {
+    function $(selector, root) {
+        return (root || document).querySelector(selector);
+    }
+
+    function $all(selector, root) {
+        return Array.prototype.slice.call((root || document).querySelectorAll(selector));
+    }
+
+    function escapeHtml(value) {
+        return String(value || '').replace(/[&<>"']/g, function(char) {
+            return {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }[char];
+        });
+    }
+
+    function trim(value) {
+        return String(value || '').replace(/^\s+|\s+$/g, '');
+    }
+
+    function copyText(text, done) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function() {
+                if (done) done();
+            }).catch(function() {
+                copyTextFallback(text, done);
+            });
+            return;
+        }
+
+        copyTextFallback(text, done);
+    }
+
+    function copyTextFallback(text, done) {
+        var textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        textarea.style.top = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        try {
+            document.execCommand('copy');
+            if (done) done();
+        } catch (error) {
+            if (done) done();
+        }
+        document.body.removeChild(textarea);
+    }
+
+    function copyTextWithLabel(button, text, label, done) {
+        if (!button) {
+            copyText(text, done);
+            return;
+        }
+
+        var original = button.innerHTML;
+        button.disabled = true;
+        copyText(text, function() {
+            button.innerHTML = label || original;
+            setTimeout(function() {
+                button.innerHTML = original;
+                button.disabled = false;
+            }, 1600);
+            if (done) done();
+        });
+    }
+
+    function fieldByName(name) {
+        return $('[name="' + name + '"], [name="' + name + '[]"], #' + name);
+    }
+
+    function fieldRow(input) {
+        if (!input) return null;
+        return input.closest('li') || input.closest('.typecho-option') || input.parentNode;
+    }
+
+    function revealElement(element) {
+        if (!element) return;
+        window.requestAnimationFrame(function() {
+            if (element.scrollIntoView) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            var focusTarget = $('input, textarea, select, button', element);
+            if (focusTarget && focusTarget.focus) {
+                try {
+                    focusTarget.focus({ preventScroll: true });
+                } catch (error) {
+                    focusTarget.focus();
+                }
+            }
+        });
+    }
+
+    function moveField(name, target) {
+        var input = fieldByName(name);
+        var row = fieldRow(input);
+        if (!row || !target) return null;
+        target.appendChild(row);
+        row.classList.add('qiwi-managed-field');
+        if ($('input[type="radio"]', row)) {
+            row.classList.add('qiwi-radio-field');
+        }
+        if ($('input[type="checkbox"]', row)) {
+            row.classList.add('qiwi-checkbox-field');
+        }
+        return row;
+    }
+
+    function moveFields(names, target) {
+        names.forEach(function(name) {
+            moveField(name, target);
+        });
+    }
+
+    // 与 functions.php 的 qiwiSplitNavLine 保持一致：按未转义的 | 分割，\| 表示字面 |，\\ 表示字面 \
+    function navSplitFields(line) {
+        var parts = [];
+        var current = '';
+        for (var i = 0; i < line.length; i++) {
+            var ch = line.charAt(i);
+            if (ch === '\\' && i + 1 < line.length) {
+                var next = line.charAt(i + 1);
+                current += next === '|' || next === '\\' ? next : ch + next;
+                i++;
+            } else if (ch === '|') {
+                parts.push(current);
+                current = '';
+            } else {
+                current += ch;
+            }
+        }
+        parts.push(current);
+        return parts;
+    }
+
+    function navEscapeField(value) {
+        return String(value || '').replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
+    }
+
+    function parseNav(text) {
+        var rows = [];
+        var seenParent = false;
+        String(text || '').split(/\r\n|\r|\n/).forEach(function(rawLine) {
+            var line = trim(rawLine);
+            if (!line || line.charAt(0) === '#') return;
+            var level = line.charAt(0) === '-' ? 'child' : 'parent';
+            if (level === 'child') line = trim(line.slice(1));
+            var parts = navSplitFields(line);
+            var title = trim(parts[0] || '');
+            // 与前台解析一致：空标题行忽略，没有父项的子菜单按主导航处理
+            if (title === '') return;
+            if (level === 'child' && !seenParent) level = 'parent';
+            if (level === 'parent') seenParent = true;
+            rows.push({
+                level: level,
+                title: title,
+                target: trim(parts[1] || ''),
+                icon: trim(parts.slice(2).join('|') || '')
+            });
+        });
+        return rows;
+    }
+
+    function navToText(rows) {
+        return rows.map(function(row) {
+            var prefix = row.level === 'child' ? '- ' : '';
+            var fields = [navEscapeField(row.title)];
+            if (row.target || row.icon) fields.push(navEscapeField(row.target));
+            if (row.icon) fields.push(navEscapeField(row.icon));
+            return prefix + fields.join('|');
+        }).filter(function(line) {
+            return line.replace(/[-|\\\s]/g, '') !== '';
+        }).join('\n');
+    }
+
+    function readNavRows(panel) {
+        return $all('.qiwi-nav-row', panel).map(function(row) {
+            return {
+                level: $('[data-nav-field="level"]', row).value,
+                title: $('[data-nav-field="title"]', row).value,
+                target: $('[data-nav-field="target"]', row).value,
+                icon: $('[data-nav-field="icon"]', row).value
+            };
+        });
+    }
+
+    function renderNavRow(item) {
+        var row = document.createElement('div');
+        row.className = 'qiwi-nav-row';
+        row.setAttribute('data-level', item.level || 'parent');
+        row.innerHTML =
+            '<select data-nav-field="level" aria-label="层级">' +
+                '<option value="parent"' + (item.level !== 'child' ? ' selected' : '') + '>主导航</option>' +
+                '<option value="child"' + (item.level === 'child' ? ' selected' : '') + '>子菜单</option>' +
+            '</select>' +
+            '<input type="text" data-nav-field="title" placeholder="标题" value="' + escapeHtml(item.title) + '">' +
+            '<input type="text" data-nav-field="target" placeholder="链接、slug 或 template:xxx.php" value="' + escapeHtml(item.target) + '">' +
+            '<input type="text" data-nav-field="icon" placeholder="Font Awesome 图标类" value="' + escapeHtml(item.icon) + '">' +
+            '<div class="qiwi-row-actions">' +
+                '<button type="button" class="qiwi-admin-button qiwi-icon-button" data-nav-action="up" title="上移" aria-label="上移"><i class="fa-solid fa-arrow-up" aria-hidden="true"></i></button>' +
+                '<button type="button" class="qiwi-admin-button qiwi-icon-button" data-nav-action="down" title="下移" aria-label="下移"><i class="fa-solid fa-arrow-down" aria-hidden="true"></i></button>' +
+                '<button type="button" class="qiwi-admin-button qiwi-icon-button is-danger" data-nav-action="delete" title="删除" aria-label="删除"><i class="fa-regular fa-trash-can" aria-hidden="true"></i></button>' +
+            '</div>';
+        return row;
+    }
+
+    function setFieldValueByName(name, value) {
+        var fields = $all('[name="' + name + '"], [name="' + name + '[]"], #' + name);
+        if (!fields.length) return;
+        var values = Array.isArray(value) ? value.map(String) : [String(value == null ? '' : value)];
+
+        fields.forEach(function(field) {
+            var tag = (field.tagName || '').toLowerCase();
+            var type = (field.type || '').toLowerCase();
+            if (type === 'checkbox') {
+                field.checked = values.indexOf(field.value) !== -1 || values.indexOf('1') !== -1 && values.length === 1;
+            } else if (type === 'radio') {
+                field.checked = String(field.value) === values[0];
+            } else if (tag === 'select' && field.multiple) {
+                $all('option', field).forEach(function(option) {
+                    option.selected = values.indexOf(option.value) !== -1;
+                });
+            } else {
+                field.value = values[0] || '';
+            }
+        });
+
+        fields[0].dispatchEvent(new Event('input', { bubbles: true }));
+        fields[0].dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    function getFieldValueByName(name) {
+        var fields = $all('[name="' + name + '"], [name="' + name + '[]"], #' + name);
+        if (!fields.length) return '';
+        var first = fields[0];
+        var type = (first.type || '').toLowerCase();
+
+        if (type === 'checkbox') {
+            return fields.filter(function(field) { return field.checked; }).map(function(field) { return field.value; });
+        }
+
+        if (type === 'radio') {
+            var checked = fields.filter(function(field) { return field.checked; })[0];
+            return checked ? checked.value : '';
+        }
+
+        if ((first.tagName || '').toLowerCase() === 'select' && first.multiple) {
+            return $all('option', first).filter(function(option) { return option.selected; }).map(function(option) { return option.value; });
+        }
+
+        return first.value || '';
+    }
+
+    function parseCategoryVisibility(text, categories) {
+        var parsed = {};
+        try {
+            var payload = JSON.parse(text || '{}');
+            var items = payload && Array.isArray(payload.items) ? payload.items : [];
+            items.forEach(function(item) {
+                if (!item || typeof item !== 'object') return;
+                var key = item.mid ? 'mid:' + String(item.mid) : 'slug:' + trim(item.slug);
+                if (key !== 'mid:0' && key !== 'slug:') parsed[key] = item;
+            });
+        } catch (error) {
+            parsed = {};
+        }
+
+        var consumed = {};
+        var rows = (categories || []).map(function(category) {
+            category = category || {};
+            var mid = parseInt(category.mid, 10) || 0;
+            var slug = trim(category.slug);
+            var midKey = mid ? 'mid:' + mid : '';
+            var slugKey = slug ? 'slug:' + slug : '';
+            var item = (midKey && parsed[midKey]) || (slugKey && parsed[slugKey]) || {};
+            if (midKey && parsed[midKey]) consumed[midKey] = true;
+            if (slugKey && parsed[slugKey]) consumed[slugKey] = true;
+            return {
+                mid: mid,
+                name: category.name || slug || ('分类 #' + mid),
+                slug: slug,
+                parent: parseInt(category.parent, 10) || 0,
+                home: item.home === 'hide' ? 'hide' : 'show',
+                rss: item.rss === 'hide' ? 'hide' : 'show'
+            };
+        });
+
+        // 已删除分类或分类列表加载失败时，未知条目暂存起来，
+        // 结构化编辑器任一次同步都要原样写回，避免静默清空历史配置。
+        var unknown = [];
+        Object.keys(parsed).forEach(function(key) {
+            if (consumed[key]) return;
+            var item = parsed[key];
+            var mid = parseInt(item.mid, 10) || 0;
+            if (!mid && !trim(item.slug)) return;
+            unknown.push({
+                mid: mid,
+                slug: trim(item.slug),
+                home: item.home === 'hide' ? 'hide' : 'show',
+                rss: item.rss === 'hide' ? 'hide' : 'show'
+            });
+        });
+
+        return { rows: rows, unknown: unknown };
+    }
+
+    function categoryVisibilityToText(rows) {
+        return JSON.stringify({
+            schema: 'qiwi-category-visibility',
+            version: 1,
+            items: (rows || []).map(function(row) {
+                return {
+                    mid: row.mid,
+                    slug: row.slug,
+                    home: row.home === 'hide' ? 'hide' : 'show',
+                    rss: row.rss === 'hide' ? 'hide' : 'show'
+                };
+            })
+        }, null, 2);
+    }
+
+    function initCategoryVisibilityEditor(panel, textarea) {
+        var editor = $('[data-qiwi-category-visibility-editor]', panel);
+        var list = $('[data-qiwi-category-visibility-list]', panel);
+        var categories = window.QIWI_ADMIN_CONFIG && Array.isArray(window.QIWI_ADMIN_CONFIG.categories) ? window.QIWI_ADMIN_CONFIG.categories : [];
+        if (!editor || !list || !textarea) return null;
+        var isRendering = false;
+        var unknownItems = [];
+
+        if (window.QIWI_ADMIN_CONFIG && window.QIWI_ADMIN_CONFIG.visibilityHookActive === false) {
+            var warning = document.createElement('div');
+            warning.className = 'qiwi-category-visibility-warning';
+            warning.innerHTML =
+                '<strong>首页 / RSS 展示过滤当前未生效</strong>' +
+                '<span>过滤依赖 QiwiTheme 伴生插件的归档钩子，而钩子只在插件激活时注册。请到后台「插件」页面禁用再启用 QiwiTheme，然后重新保存主题设置。</span>';
+            editor.insertBefore(warning, editor.firstChild);
+        }
+
+        function sync() {
+            var rows = $all('.qiwi-category-visibility-row', list).map(function(row) {
+                var home = $('[data-category-field="home"]', row);
+                var rss = $('[data-category-field="rss"]', row);
+                return {
+                    mid: parseInt(row.getAttribute('data-category-mid'), 10) || 0,
+                    slug: row.getAttribute('data-category-slug') || '',
+                    home: home && home.checked ? 'show' : 'hide',
+                    rss: rss && rss.checked ? 'show' : 'hide'
+                };
+            });
+            textarea.value = categoryVisibilityToText(rows.concat(unknownItems));
+        }
+
+        function render(parsed) {
+            isRendering = true;
+            unknownItems = parsed.unknown || [];
+            list.innerHTML = '';
+            if (!parsed.rows.length) {
+                var empty = document.createElement('div');
+                empty.className = 'qiwi-admin-empty';
+                empty.textContent = '当前没有可管理的分类。';
+                list.appendChild(empty);
+                isRendering = false;
+                return;
+            }
+
+            parsed.rows.forEach(function(row) {
+                var item = document.createElement('div');
+                item.className = 'qiwi-category-visibility-row';
+                item.setAttribute('data-category-mid', String(row.mid));
+                item.setAttribute('data-category-slug', row.slug);
+                if (row.parent) item.classList.add('is-child');
+                item.innerHTML =
+                    '<div class="qiwi-category-visibility-name"><strong>' + escapeHtml(row.name) + '</strong><small>' + escapeHtml(row.slug) + '</small></div>' +
+                    '<label><input type="checkbox" data-category-field="home"' + (row.home === 'show' ? ' checked' : '') + '>首页</label>' +
+                    '<label><input type="checkbox" data-category-field="rss"' + (row.rss === 'show' ? ' checked' : '') + '>RSS</label>';
+                list.appendChild(item);
+            });
+            isRendering = false;
+        }
+
+        render(parseCategoryVisibility(textarea.value, categories));
+        textarea.addEventListener('input', function() {
+            if (!isRendering) render(parseCategoryVisibility(textarea.value, categories));
+        });
+        list.addEventListener('change', function() {
+            if (!isRendering) sync();
+        });
+
+        return {
+            refresh: function() { render(parseCategoryVisibility(textarea.value, categories)); },
+            sync: sync
+        };
+    }
+
+    function initNavEditor(panel, textarea) {
+        var list = $('[data-qiwi-nav-list]', panel);
+        var isRendering = false;
+
+        function sync() {
+            textarea.value = navToText(readNavRows(panel));
+            $all('.qiwi-nav-row', panel).forEach(function(row) {
+                row.setAttribute('data-level', $('[data-nav-field="level"]', row).value);
+            });
+        }
+
+        function render(items) {
+            isRendering = true;
+            list.innerHTML = '';
+            if (!items.length) {
+                var empty = document.createElement('div');
+                empty.className = 'qiwi-admin-empty';
+                empty.textContent = '当前为空，将自动显示全部可见独立页面。也可以点击上方按钮添加手动导航。';
+                list.appendChild(empty);
+                isRendering = false;
+                return;
+            }
+            items.forEach(function(item) {
+                list.appendChild(renderNavRow(item));
+            });
+            isRendering = false;
+        }
+
+        render(parseNav(textarea.value));
+
+        textarea.addEventListener('input', function() {
+            if (isRendering) return;
+            render(parseNav(textarea.value));
+        });
+
+        $('[data-nav-add="parent"]', panel).addEventListener('click', function() {
+            var empty = $('.qiwi-admin-empty', list);
+            if (empty) empty.remove();
+            list.appendChild(renderNavRow({ level: 'parent' }));
+            sync();
+        });
+
+        $('[data-nav-add="child"]', panel).addEventListener('click', function() {
+            var empty = $('.qiwi-admin-empty', list);
+            if (empty) empty.remove();
+            list.appendChild(renderNavRow({ level: 'child' }));
+            sync();
+        });
+
+        list.addEventListener('input', function() {
+            if (!isRendering) sync();
+        });
+        list.addEventListener('change', function() {
+            if (!isRendering) sync();
+        });
+        list.addEventListener('click', function(event) {
+            var button = event.target.closest('[data-nav-action]');
+            if (!button) return;
+            var row = button.closest('.qiwi-nav-row');
+            if (!row) return;
+            var action = button.getAttribute('data-nav-action');
+            if (action === 'delete') row.remove();
+            if (action === 'up' && row.previousElementSibling) list.insertBefore(row, row.previousElementSibling);
+            if (action === 'down' && row.nextElementSibling) list.insertBefore(row.nextElementSibling, row);
+            sync();
+            if (!$all('.qiwi-nav-row', list).length) render([]);
+        });
+
+        return {
+            refresh: function() { render(parseNav(textarea.value)); },
+            sync: sync
+        };
+    }
+
+    function initPlogTemplatePanel(panel) {
+        var copyButton = $('[data-plog-template-copy]', panel);
+        var output = $('[data-plog-template-code]', panel);
+        if (!copyButton || !output) return;
+
+        copyButton.addEventListener('click', function() {
+            copyTextWithLabel(copyButton, output.textContent || output.innerText || '', '已复制');
+        });
+    }
+
+    function parseFriends(text) {
+        try {
+            var data = JSON.parse(text || '{}');
+            return data && typeof data === 'object' && !Array.isArray(data) ? data : {};
+        } catch (error) {
+            return {};
+        }
+    }
+
+    function friendExtras(friend) {
+        var extras = {};
+        Object.keys(friend || {}).forEach(function(key) {
+            if (['name', 'url', 'avatar', 'description'].indexOf(key) === -1) extras[key] = friend[key];
+        });
+        return extras;
+    }
+
+    function getFriendField(row, key) {
+        var input = $('[data-friend-field="' + key + '"]', row);
+        return input ? input.value : '';
+    }
+
+    function updateFriendSummary(row) {
+        var name = trim(getFriendField(row, 'name')) || '未命名友链';
+        var url = trim(getFriendField(row, 'url')) || '未填写链接';
+        var avatar = trim(getFriendField(row, 'avatar'));
+        var avatarImg = $('.qiwi-friend-avatar img', row);
+        var nameEl = $('.qiwi-friend-summary-name', row);
+        var urlEl = $('.qiwi-friend-summary-url', row);
+
+        if (avatarImg) {
+            avatarImg.src = avatar || 'https://gravatar.loli.net/avatar/default?s=96&d=mp';
+            avatarImg.alt = name;
+        }
+        if (nameEl) nameEl.textContent = name;
+        if (urlEl) urlEl.textContent = url;
+    }
+
+    function renderFriendRow(friend, expanded) {
+        var row = document.createElement('div');
+        var name = trim(friend && friend.name) || '未命名友链';
+        var url = trim(friend && friend.url) || '未填写链接';
+        var avatar = trim(friend && friend.avatar) || 'https://gravatar.loli.net/avatar/default?s=96&d=mp';
+        var chevronSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>';
+
+        row.className = 'qiwi-friend-row' + (expanded ? ' is-open' : '');
+        row.setAttribute('data-extra', JSON.stringify(friendExtras(friend || {})));
+        row.innerHTML =
+            '<button type="button" class="qiwi-friend-summary" data-friend-action="toggle" aria-expanded="' + (expanded ? 'true' : 'false') + '">' +
+                '<span class="qiwi-friend-drag" data-friend-drag draggable="true" title="拖拽排序" aria-hidden="true"><i class="fa-solid fa-grip-vertical"></i></span>' +
+                '<span class="qiwi-friend-avatar"><img src="' + escapeHtml(avatar) + '" alt="' + escapeHtml(name) + '" loading="lazy" onerror="this.src=\'https://gravatar.loli.net/avatar/default?s=96&d=mp\'"></span>' +
+                '<span class="qiwi-friend-summary-text">' +
+                    '<strong class="qiwi-friend-summary-name">' + escapeHtml(name) + '</strong>' +
+                    '<span class="qiwi-friend-summary-url">' + escapeHtml(url) + '</span>' +
+                '</span>' +
+                '<span class="qiwi-friend-arrow">' + chevronSvg + '</span>' +
+            '</button>' +
+            '<div class="qiwi-friend-editor">' +
+                '<label>名称<input type="text" data-friend-field="name" value="' + escapeHtml(friend && friend.name) + '"></label>' +
+                '<label>链接<input type="url" data-friend-field="url" value="' + escapeHtml(friend && friend.url) + '"></label>' +
+                '<label>头像<input type="url" data-friend-field="avatar" value="' + escapeHtml(friend && friend.avatar) + '"></label>' +
+                '<label class="qiwi-friend-wide">描述<textarea rows="2" data-friend-field="description">' + escapeHtml(friend && friend.description) + '</textarea></label>' +
+                '<div class="qiwi-row-actions"><button type="button" class="qiwi-admin-button qiwi-icon-button is-danger" data-friend-action="delete" title="删除友链" aria-label="删除友链"><i class="fa-regular fa-trash-can" aria-hidden="true"></i></button></div>' +
+            '</div>';
+        return row;
+    }
+
+    function setCategoryOpen(category, isOpen) {
+        category.classList.toggle('is-open', isOpen);
+        var button = $('[data-friend-action="toggle-category"]', category);
+        if (button) button.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+
+    function renderCategory(name, friends, open) {
+        var category = document.createElement('div');
+        var chevronSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>';
+        category.className = 'qiwi-friend-category' + (open ? ' is-open' : '');
+        category.innerHTML =
+            '<div class="qiwi-friend-category-header">' +
+                '<button type="button" class="qiwi-friend-category-toggle" data-friend-action="toggle-category" aria-expanded="' + (open ? 'true' : 'false') + '"><span class="qiwi-friend-category-arrow">' + chevronSvg + '</span></button>' +
+                '<span class="qiwi-friend-category-drag" data-category-drag draggable="true" title="拖拽排序" aria-hidden="true"><i class="fa-solid fa-grip-vertical"></i></span>' +
+                '<input type="text" data-category-name value="' + escapeHtml(name) + '" placeholder="分类名称">' +
+                '<div class="qiwi-row-actions">' +
+                    '<button type="button" class="qiwi-admin-button" data-friend-action="add">添加友链</button>' +
+                    '<button type="button" class="qiwi-admin-button qiwi-icon-button is-danger" data-friend-action="delete-category" title="删除分类" aria-label="删除分类"><i class="fa-regular fa-trash-can" aria-hidden="true"></i></button>' +
+                '</div>' +
+            '</div>' +
+            '<div class="qiwi-friend-category-body" data-friend-list></div>';
+        var list = $('[data-friend-list]', category);
+        (friends || []).forEach(function(friend) {
+            list.appendChild(renderFriendRow(friend, false));
+        });
+        return category;
+    }
+
+    function initFriendsEditor(panel, textarea) {
+        var list = $('[data-qiwi-friends-list]', panel);
+        var draggedFriend = null;
+        var draggedCategory = null;
+        var isRendering = false;
+
+        function readData() {
+            var data = {};
+            $all('.qiwi-friend-category', panel).forEach(function(category) {
+                var name = trim($('[data-category-name]', category).value);
+                if (!name) return;
+                data[name] = $all('.qiwi-friend-row', category).map(function(row) {
+                    var friend = {};
+                    try {
+                        friend = JSON.parse(row.getAttribute('data-extra') || '{}');
+                    } catch (error) {
+                        friend = {};
+                    }
+                    ['name', 'url', 'avatar', 'description'].forEach(function(key) {
+                        friend[key] = getFriendField(row, key);
+                    });
+                    return friend;
+                }).filter(function(friend) {
+                    // 仅含扩展字段（如 since/rel）的友链也要保留，否则一次编辑器同步就会把它删掉
+                    var hasExtra = Object.keys(friend).some(function(key) {
+                        return ['name', 'url', 'avatar', 'description'].indexOf(key) === -1 && friend[key] !== '' && friend[key] !== null && friend[key] !== undefined;
+                    });
+                    return friend.name || friend.url || friend.avatar || friend.description || hasExtra;
+                });
+            });
+            return data;
+        }
+
+        function sync() {
+            var data = readData();
+            textarea.value = Object.keys(data).length ? JSON.stringify(data, null, 2) : '';
+        }
+
+        function render(data) {
+            isRendering = true;
+            list.innerHTML = '';
+            Object.keys(data).forEach(function(name) {
+                list.appendChild(renderCategory(name, Array.isArray(data[name]) ? data[name] : [], true));
+            });
+            if (!Object.keys(data).length) {
+                var empty = document.createElement('div');
+                empty.className = 'qiwi-admin-empty';
+                empty.textContent = '还没有友链分类，点击“添加分类”开始配置。';
+                list.appendChild(empty);
+            }
+            isRendering = false;
+        }
+
+        render(parseFriends(textarea.value));
+
+        textarea.addEventListener('input', function() {
+            if (!isRendering) render(parseFriends(textarea.value));
+        });
+
+        $('[data-friend-action="add-category"]', panel).addEventListener('click', function() {
+            var empty = $('.qiwi-admin-empty', list);
+            if (empty) empty.remove();
+            var category = renderCategory('默认分类', [], true);
+            list.appendChild(category);
+            sync();
+            revealElement(category);
+        });
+
+        list.addEventListener('input', function(event) {
+            var row = event.target.closest('.qiwi-friend-row');
+            if (row) updateFriendSummary(row);
+            if (!isRendering) sync();
+        });
+
+        list.addEventListener('click', function(event) {
+            var button = event.target.closest('[data-friend-action]');
+            if (!button) return;
+            var action = button.getAttribute('data-friend-action');
+            var category = button.closest('.qiwi-friend-category');
+            var row = button.closest('.qiwi-friend-row');
+
+            if (action === 'toggle-category' && category) {
+                setCategoryOpen(category, !category.classList.contains('is-open'));
+            }
+
+            if (action === 'toggle' && row) {
+                if (event.target.closest('[data-friend-drag]')) return;
+                var isOpen = !row.classList.contains('is-open');
+                row.classList.toggle('is-open', isOpen);
+                button.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            }
+
+            if (action === 'add' && category) {
+                setCategoryOpen(category, true);
+                var friendList = $('[data-friend-list]', category);
+                var newRow = renderFriendRow({}, true);
+                friendList.appendChild(newRow);
+                sync();
+                revealElement(newRow);
+                return;
+            }
+
+            if (action === 'delete' && row && row.classList.contains('is-open')) {
+                row.remove();
+            }
+
+            if (action === 'delete-category' && category) {
+                category.remove();
+            }
+
+            sync();
+            if (!$all('.qiwi-friend-category', list).length) render({});
+        });
+
+        list.addEventListener('dragstart', function(event) {
+            var friendHandle = event.target.closest('[data-friend-drag]');
+            var categoryHandle = event.target.closest('[data-category-drag]');
+
+            if (friendHandle) {
+                draggedFriend = friendHandle.closest('.qiwi-friend-row');
+                if (!draggedFriend) return;
+                draggedFriend.classList.add('is-dragging');
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/plain', 'friend');
+                return;
+            }
+
+            if (categoryHandle) {
+                draggedCategory = categoryHandle.closest('.qiwi-friend-category');
+                if (!draggedCategory) return;
+                draggedCategory.classList.add('is-dragging');
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/plain', 'category');
+                return;
+            }
+
+            event.preventDefault();
+        });
+
+        list.addEventListener('dragover', function(event) {
+            if (draggedFriend) {
+                var targetList = event.target.closest('[data-friend-list]');
+                if (!targetList) return;
+                event.preventDefault();
+
+                var targetRow = event.target.closest('.qiwi-friend-row');
+                if (targetRow && targetRow !== draggedFriend) {
+                    var rowRect = targetRow.getBoundingClientRect();
+                    var beforeRow = event.clientY < rowRect.top + rowRect.height / 2;
+                    targetList.insertBefore(draggedFriend, beforeRow ? targetRow : targetRow.nextSibling);
+                } else if (!targetRow) {
+                    targetList.appendChild(draggedFriend);
+                }
+                return;
+            }
+
+            if (draggedCategory) {
+                var targetCategory = event.target.closest('.qiwi-friend-category');
+                if (!targetCategory || targetCategory === draggedCategory || draggedCategory.contains(targetCategory)) return;
+                event.preventDefault();
+
+                var categoryRect = targetCategory.getBoundingClientRect();
+                var beforeCategory = event.clientY < categoryRect.top + categoryRect.height / 2;
+                list.insertBefore(draggedCategory, beforeCategory ? targetCategory : targetCategory.nextSibling);
+            }
+        });
+
+        list.addEventListener('drop', function(event) {
+            if (!draggedFriend && !draggedCategory) return;
+            event.preventDefault();
+            sync();
+        });
+
+        list.addEventListener('dragend', function() {
+            if (draggedFriend) {
+                draggedFriend.classList.remove('is-dragging');
+                draggedFriend = null;
+            }
+            if (draggedCategory) {
+                draggedCategory.classList.remove('is-dragging');
+                draggedCategory = null;
+            }
+            sync();
+        });
+
+        return {
+            refresh: function() { render(parseFriends(textarea.value)); },
+            sync: sync
+        };
+    }
+
+    function parseBooks(text) {
+        return String(text || '').split('&&').map(function(part) {
+            var pieces = part.split(',');
+            return {
+                title: trim(pieces[0] || ''),
+                words: trim(pieces.slice(1).join(',') || '')
+            };
+        }).filter(function(book) {
+            return book.title || book.words;
+        });
+    }
+
+    function booksToText(books) {
+        return books.map(function(book) {
+            if (!book.title && !book.words) return '';
+            return book.title + ', ' + book.words;
+        }).filter(Boolean).join('&&');
+    }
+
+    function renderBookRow(book) {
+        var row = document.createElement('div');
+        row.className = 'qiwi-book-row';
+        row.innerHTML =
+            '<input type="text" data-book-field="title" placeholder="书名" value="' + escapeHtml(book.title) + '">' +
+            '<input type="number" min="0" step="1" data-book-field="words" placeholder="字数" value="' + escapeHtml(book.words) + '">' +
+            '<div class="qiwi-row-actions">' +
+                '<button type="button" class="qiwi-admin-button qiwi-icon-button" data-book-action="up" title="上移" aria-label="上移"><i class="fa-solid fa-arrow-up" aria-hidden="true"></i></button>' +
+                '<button type="button" class="qiwi-admin-button qiwi-icon-button" data-book-action="down" title="下移" aria-label="下移"><i class="fa-solid fa-arrow-down" aria-hidden="true"></i></button>' +
+                '<button type="button" class="qiwi-admin-button qiwi-icon-button is-danger" data-book-action="delete" title="删除" aria-label="删除"><i class="fa-regular fa-trash-can" aria-hidden="true"></i></button>' +
+            '</div>';
+        return row;
+    }
+
+    function initBookEditor(panel, input) {
+        var list = $('[data-qiwi-book-list]', panel);
+        var isRendering = false;
+
+        function readBooks() {
+            return $all('.qiwi-book-row', list).map(function(row) {
+                return {
+                    title: $('[data-book-field="title"]', row).value,
+                    words: $('[data-book-field="words"]', row).value
+                };
+            }).filter(function(book) {
+                return book.title || book.words;
+            });
+        }
+
+        function sync() {
+            input.value = booksToText(readBooks());
+        }
+
+        function render(books) {
+            isRendering = true;
+            list.innerHTML = '';
+            if (!books.length) {
+                var empty = document.createElement('div');
+                empty.className = 'qiwi-admin-empty';
+                empty.textContent = '还没有书籍统计条目。';
+                list.appendChild(empty);
+                isRendering = false;
+                return;
+            }
+            books.forEach(function(book) {
+                list.appendChild(renderBookRow(book));
+            });
+            isRendering = false;
+        }
+
+        render(parseBooks(input.value));
+
+        input.addEventListener('input', function() {
+            if (!isRendering) render(parseBooks(input.value));
+        });
+
+        $('[data-book-action="add"]', panel).addEventListener('click', function() {
+            var empty = $('.qiwi-admin-empty', list);
+            if (empty) empty.remove();
+            list.appendChild(renderBookRow({ title: '', words: '' }));
+            sync();
+        });
+
+        list.addEventListener('input', function() {
+            if (!isRendering) sync();
+        });
+        list.addEventListener('click', function(event) {
+            var button = event.target.closest('[data-book-action]');
+            if (!button) return;
+            var row = button.closest('.qiwi-book-row');
+            if (!row) return;
+            var action = button.getAttribute('data-book-action');
+            if (action === 'delete') row.remove();
+            if (action === 'up' && row.previousElementSibling) list.insertBefore(row, row.previousElementSibling);
+            if (action === 'down' && row.nextElementSibling) list.insertBefore(row.nextElementSibling, row);
+            sync();
+            if (!$all('.qiwi-book-row', list).length) render([]);
+        });
+
+        return {
+            refresh: function() { render(parseBooks(input.value)); },
+            sync: sync
+        };
+    }
+
+    function getAdminConfig() {
+        return window.QIWI_ADMIN_CONFIG || {};
+    }
+
+    function normalizeFriendFeedBaseUrl(value) {
+        return trim(value).replace(/\/+$/g, '');
+    }
+
+    function friendFeedEndpoint(path) {
+        var base = normalizeFriendFeedBaseUrl(getFieldValueByName('friendFeedBaseUrl'));
+        return base ? base + path : '';
+    }
+
+    function friendFeedHeaders(withAuth) {
+        var headers = {};
+        var token = trim(getFieldValueByName('friendFeedAdminToken'));
+        if (withAuth && token) headers.Authorization = 'Bearer ' + token;
+        return headers;
+    }
+
+    function friendFeedFetchJson(url, options) {
+        options = options || {};
+        options.cache = 'no-store';
+        return fetch(url, options).then(function(response) {
+            return response.text().then(function(text) {
+                var data = text ? JSON.parse(text) : {};
+                if (!response.ok) {
+                    throw new Error(data && data.error ? data.error : 'HTTP ' + response.status);
+                }
+                return data;
+            });
+        });
+    }
+
+    function initFriendFeedPanel(panel) {
+        var root = $('[data-qiwi-friend-feed]', panel);
+        if (!root || root.dataset.qiwiFriendFeedReady === '1') return;
+        root.dataset.qiwiFriendFeedReady = '1';
+
+        var baseInput = fieldByName('friendFeedBaseUrl');
+        var tokenInput = fieldByName('friendFeedAdminToken');
+        var limitInput = fieldByName('friendFeedLimit');
+        var status = $('[data-friend-feed-status]', root);
+        var summary = $('[data-friend-feed-summary]', root);
+        var remote = $('[data-friend-feed-remote]', root);
+        var feedList = $('[data-rss-feed-list]', root);
+        var logs = $('[data-rss-fetch-logs]', root);
+        var checkButton = $('[data-friend-feed-check]', root);
+        var refreshButton = $('[data-friend-feed-refresh]', root);
+        var fetchAllButton = $('[data-friend-feed-fetch-all]', root);
+        var saveButton = $('[data-friend-feed-save]', root);
+        var newForm = $('[data-rss-new-form]', root);
+        var discoverInput = $('[data-rss-discover-url]', root);
+
+        if (tokenInput) {
+            tokenInput.type = 'password';
+            tokenInput.setAttribute('autocomplete', 'current-password');
+        }
+        if (baseInput && !baseInput.getAttribute('placeholder')) {
+            baseInput.setAttribute('placeholder', 'http://127.0.0.1:8080');
+        }
+        if (limitInput) {
+            limitInput.setAttribute('inputmode', 'numeric');
+            limitInput.setAttribute('placeholder', '10');
+        }
+
+        var settingLabels = {
+            summary_max_chars: '摘要最大字符数',
+            entries_default_limit: '默认文章数量',
+            entries_max_limit: '最大文章数量',
+            default_fetch_interval_minutes: '默认抓取间隔（分钟）',
+            full_text_enabled: '抓取全文',
+            full_text_max_entries_per_feed: '每源全文文章数',
+            full_text_max_bytes_per_feed: '每源全文字节上限',
+            fetch_log_retention: '抓取日志保留条数'
+        };
+        var settingOrder = [
+            'summary_max_chars',
+            'entries_default_limit',
+            'entries_max_limit',
+            'default_fetch_interval_minutes',
+            'full_text_enabled',
+            'full_text_max_entries_per_feed',
+            'full_text_max_bytes_per_feed',
+            'fetch_log_retention'
+        ];
+
+        function setStatus(message, type) {
+            if (!status) return;
+            status.textContent = message || '';
+            status.classList.toggle('is-error', type === 'error');
+            status.classList.toggle('is-success', type === 'success');
+        }
+
+        function setBusy(isBusy) {
+            [checkButton, refreshButton, fetchAllButton, saveButton].forEach(function(button) {
+                if (button) button.disabled = isBusy;
+            });
+        }
+
+        function requireBaseUrl() {
+            if (!friendFeedEndpoint('/')) {
+                setStatus('请先填写 QiwiRss Base URL。', 'error');
+                return false;
+            }
+            if (!window.fetch) {
+                setStatus('当前浏览器不支持 fetch，无法连接 QiwiRss。', 'error');
+                return false;
+            }
+            return true;
+        }
+
+        function requireToken() {
+            if (!trim(getFieldValueByName('friendFeedAdminToken'))) {
+                setStatus('请先填写 Admin Token。', 'error');
+                return false;
+            }
+            return true;
+        }
+
+        function formatRssDate(value) {
+            if (!value) return '-';
+            var date = new Date(value);
+            if (isNaN(date.getTime())) return String(value);
+            return new Intl.DateTimeFormat('zh-CN', {
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            }).format(date);
+        }
+
+        function renderSummary(info) {
+            if (!summary) return;
+            if (!info) {
+                summary.innerHTML = '';
+                return;
+            }
+            summary.innerHTML =
+                '<div><span>服务状态</span><strong>' + escapeHtml(info.status || '-') + '</strong></div>' +
+                '<div><span>RSS 源</span><strong>' + escapeHtml(info.feed_count == null ? '-' : info.feed_count) + '</strong></div>' +
+                '<div><span>文章</span><strong>' + escapeHtml(info.entry_count == null ? '-' : info.entry_count) + '</strong></div>' +
+                '<div><span>最近文章</span><strong>' + escapeHtml(formatRssDate(info.latest_entry)) + '</strong></div>';
+        }
+
+        function renderRemoteSettings(settings) {
+            if (!remote) return;
+            var rows = settingOrder.filter(function(key) {
+                return Object.prototype.hasOwnProperty.call(settings, key);
+            }).map(function(key) {
+                var value = settings[key];
+                if (key === 'full_text_enabled') {
+                    var isEnabled = value === true || value === 'true' || value === 1 || value === '1';
+                    return '<label class="qiwi-friend-feed-setting"><span>' + escapeHtml(settingLabels[key]) + '</span><select data-rss-setting="' + key + '">' +
+                        '<option value="true"' + (isEnabled ? ' selected' : '') + '>启用</option>' +
+                        '<option value="false"' + (!isEnabled ? ' selected' : '') + '>关闭</option>' +
+                    '</select></label>';
+                }
+                return '<label class="qiwi-friend-feed-setting"><span>' + escapeHtml(settingLabels[key]) + '</span><input type="number" min="0" step="1" data-rss-setting="' + key + '" value="' + escapeHtml(value) + '"></label>';
+            });
+
+            remote.innerHTML = rows.length ?
+                '<section class="qiwi-friend-feed-section"><div class="qiwi-friend-feed-section-head"><strong>远端配置</strong><span>保存后立即写入 QiwiRss。</span></div><div class="qiwi-friend-feed-settings">' + rows.join('') + '</div></section>' :
+                '<p class="qiwi-friend-feed-empty">远端没有返回可编辑配置。</p>';
+        }
+
+        function feedField(form, key) {
+            return $('[data-rss-feed-field="' + key + '"]', form);
+        }
+
+        function setFeedForm(form, data) {
+            if (!form) return;
+            ['title', 'site_url', 'feed_url', 'avatar_url', 'description', 'fetch_interval_minutes'].forEach(function(key) {
+                var input = feedField(form, key);
+                if (input) input.value = data && data[key] != null ? data[key] : (key === 'fetch_interval_minutes' ? '60' : '');
+            });
+            var enabled = feedField(form, 'enabled');
+            if (enabled) enabled.value = !data || data.enabled !== false ? 'true' : 'false';
+        }
+
+        function readFeedForm(form) {
+            var data = {};
+            ['title', 'site_url', 'feed_url', 'avatar_url', 'description', 'fetch_interval_minutes', 'enabled'].forEach(function(key) {
+                var input = feedField(form, key);
+                if (!input) return;
+                if (key === 'enabled') {
+                    data.enabled = input.value !== 'false';
+                } else if (key === 'fetch_interval_minutes') {
+                    data[key] = parseInt(input.value, 10) || 60;
+                } else {
+                    data[key] = trim(input.value);
+                }
+            });
+            return data;
+        }
+
+        function feedEditorHtml(feed) {
+            feed = feed || {};
+            return '<div class="qiwi-friend-feed-editor" data-rss-feed-form>' +
+                '<label>标题<input type="text" data-rss-feed-field="title" value="' + escapeHtml(feed.title || '') + '"></label>' +
+                '<label>站点 URL<input type="url" data-rss-feed-field="site_url" value="' + escapeHtml(feed.site_url || '') + '"></label>' +
+                '<label>RSS URL<input type="url" data-rss-feed-field="feed_url" value="' + escapeHtml(feed.feed_url || '') + '"></label>' +
+                '<label>头像 URL<input type="url" data-rss-feed-field="avatar_url" value="' + escapeHtml(feed.avatar_url || '') + '"></label>' +
+                '<label>抓取间隔（分钟）<input type="number" min="1" step="1" data-rss-feed-field="fetch_interval_minutes" value="' + escapeHtml(feed.fetch_interval_minutes || 60) + '"></label>' +
+                '<label>启用<select data-rss-feed-field="enabled"><option value="true"' + (feed.enabled === false ? '' : ' selected') + '>启用</option><option value="false"' + (feed.enabled === false ? ' selected' : '') + '>关闭</option></select></label>' +
+                '<label class="qiwi-friend-feed-wide">描述<textarea rows="2" data-rss-feed-field="description">' + escapeHtml(feed.description || '') + '</textarea></label>' +
+            '</div>';
+        }
+
+        function renderFeeds(feeds) {
+            if (!feedList) return;
+            feeds = Array.isArray(feeds) ? feeds : [];
+            if (!feeds.length) {
+                feedList.innerHTML = '<p class="qiwi-friend-feed-empty">还没有 RSS 源。</p>';
+                return;
+            }
+
+            feedList.innerHTML = feeds.map(function(feed) {
+                var statusClass = feed.status === 'ok' ? 'is-ok' : (feed.status ? 'is-error' : '');
+                var title = feed.title || '未命名 RSS 源';
+                var avatar = feed.avatar_url || 'https://gravatar.loli.net/avatar/default?s=96&d=mp';
+                return '<article class="qiwi-rss-feed-row" data-rss-feed-id="' + escapeHtml(feed.id) + '">' +
+                    '<button type="button" class="qiwi-rss-feed-summary" data-rss-action="toggle" aria-expanded="false">' +
+                        '<span class="qiwi-rss-feed-avatar"><img src="' + escapeHtml(avatar) + '" alt="' + escapeHtml(title) + '" loading="lazy" onerror="this.src=\'https://gravatar.loli.net/avatar/default?s=96&d=mp\'"></span>' +
+                        '<span class="qiwi-rss-feed-main"><strong>' + escapeHtml(title) + '</strong><em>' + escapeHtml(feed.site_url || feed.feed_url || '') + '</em></span>' +
+                        '<span class="qiwi-rss-feed-state ' + statusClass + '">' + escapeHtml(feed.enabled === false ? '关闭' : (feed.status || '启用')) + '</span>' +
+                    '</button>' +
+                    '<div class="qiwi-rss-feed-detail">' +
+                        '<div class="qiwi-rss-feed-meta">' +
+                            '<span>RSS：' + escapeHtml(feed.feed_url || '-') + '</span>' +
+                            '<span>最近成功：' + escapeHtml(formatRssDate(feed.last_success_at)) + '</span>' +
+                            '<span>最近抓取：' + escapeHtml(formatRssDate(feed.last_fetched_at)) + '</span>' +
+                            (feed.last_error ? '<span class="is-error">错误：' + escapeHtml(feed.last_error) + '</span>' : '') +
+                        '</div>' +
+                        feedEditorHtml(feed) +
+                        '<div class="qiwi-admin-toolbar qiwi-rss-feed-actions">' +
+                            '<button type="button" class="qiwi-admin-button is-primary" data-rss-action="save-feed"><i class="fa-regular fa-circle-check" aria-hidden="true"></i>保存</button>' +
+                            '<button type="button" class="qiwi-admin-button" data-rss-action="fetch-feed"><i class="fa-solid fa-cloud-arrow-down" aria-hidden="true"></i>立即抓取</button>' +
+                            '<button type="button" class="qiwi-admin-button is-danger" data-rss-action="delete-feed"><i class="fa-regular fa-trash-can" aria-hidden="true"></i>删除</button>' +
+                        '</div>' +
+                    '</div>' +
+                '</article>';
+            }).join('');
+        }
+
+        function renderLogs(rows) {
+            if (!logs) return;
+            rows = Array.isArray(rows) ? rows : [];
+            if (!rows.length) {
+                logs.innerHTML = '<section class="qiwi-friend-feed-section"><div class="qiwi-friend-feed-section-head"><strong>抓取日志</strong><span>暂时没有日志。</span></div></section>';
+                return;
+            }
+
+            logs.innerHTML = '<section class="qiwi-friend-feed-section"><div class="qiwi-friend-feed-section-head"><strong>抓取日志</strong><span>最近 ' + rows.length + ' 条记录。</span></div><div class="qiwi-rss-log-list">' +
+                rows.map(function(row) {
+                    var ok = row.status === 'ok' || row.success === true;
+                    var details = row.message || row.error || row.status || '-';
+                    if (row.entries_found != null || row.entries_saved != null || row.duration_ms != null) {
+                        details += ' · 发现 ' + (row.entries_found == null ? '-' : row.entries_found) +
+                            ' · 写入 ' + (row.entries_saved == null ? '-' : row.entries_saved) +
+                            (row.duration_ms == null ? '' : ' · ' + Math.round(row.duration_ms / 1000) + 's');
+                    }
+                    return '<div class="qiwi-rss-log-row ' + (ok ? 'is-ok' : 'is-error') + '">' +
+                        '<span>' + escapeHtml(formatRssDate(row.created_at || row.fetched_at || row.time)) + '</span>' +
+                        '<strong>' + escapeHtml(row.feed_title || row.title || ('Feed #' + (row.feed_id || '-'))) + '</strong>' +
+                        '<em>' + escapeHtml(details) + '</em>' +
+                    '</div>';
+                }).join('') + '</div></section>';
+        }
+
+        function loadStatus() {
+            return friendFeedFetchJson(friendFeedEndpoint('/api/public/status')).then(function(info) {
+                renderSummary(info);
+                return info;
+            });
+        }
+
+        function loadSettings() {
+            return friendFeedFetchJson(friendFeedEndpoint('/api/admin/settings'), {
+                headers: friendFeedHeaders(true)
+            }).then(function(payload) {
+                renderRemoteSettings(payload && payload.data ? payload.data : {});
+            });
+        }
+
+        function loadFeeds() {
+            return friendFeedFetchJson(friendFeedEndpoint('/api/admin/feeds'), {
+                headers: friendFeedHeaders(true)
+            }).then(function(payload) {
+                renderFeeds(payload && payload.data ? payload.data : []);
+            });
+        }
+
+        function loadLogs() {
+            return friendFeedFetchJson(friendFeedEndpoint('/api/admin/fetch-logs?limit=20'), {
+                headers: friendFeedHeaders(true)
+            }).then(function(payload) {
+                renderLogs(payload && payload.data ? payload.data : []);
+            }).catch(function() {
+                renderLogs([]);
+            });
+        }
+
+        function loadRemoteData() {
+            if (!requireBaseUrl()) return;
+            setBusy(true);
+            setStatus('正在连接 QiwiRss...');
+            loadStatus().then(function(info) {
+                var parts = ['连接正常'];
+                if (info.feed_count != null) parts.push(info.feed_count + ' 个源');
+                if (info.entry_count != null) parts.push(info.entry_count + ' 篇文章');
+
+                if (!trim(getFieldValueByName('friendFeedAdminToken'))) {
+                    if (remote) remote.innerHTML = '<p class="qiwi-friend-feed-empty">填写 Admin Token 后可编辑远端配置和 RSS 源。</p>';
+                    if (feedList) feedList.innerHTML = '<p class="qiwi-friend-feed-empty">填写 Admin Token 后可管理 RSS 源。</p>';
+                    renderLogs([]);
+                    setStatus(parts.join('，') + '。', 'success');
+                    return null;
+                }
+
+                setStatus(parts.join('，') + '，正在读取管理数据...');
+                return Promise.all([loadSettings(), loadFeeds(), loadLogs()]).then(function() {
+                    setStatus(parts.join('，') + '。RSS 管理数据已读取。', 'success');
+                });
+            }).catch(function(error) {
+                renderSummary(null);
+                if (remote) remote.innerHTML = '<p class="qiwi-friend-feed-empty">暂未读取到远端配置。</p>';
+                if (feedList) feedList.innerHTML = '<p class="qiwi-friend-feed-empty">暂未读取到 RSS 源。</p>';
+                setStatus(error && error.message ? error.message : '连接失败。', 'error');
+            }).then(function() {
+                setBusy(false);
+            });
+        }
+
+        function saveRemoteSettings() {
+            var payload = {};
+            if (!requireBaseUrl() || !requireToken()) return;
+
+            $all('[data-rss-setting]', remote).forEach(function(input) {
+                payload[input.getAttribute('data-rss-setting')] = input.value;
+            });
+            if (!Object.keys(payload).length) {
+                setStatus('没有可保存的远端配置。', 'error');
+                return;
+            }
+
+            setBusy(true);
+            setStatus('正在保存远端配置...');
+            friendFeedFetchJson(friendFeedEndpoint('/api/admin/settings'), {
+                method: 'PUT',
+                headers: Object.assign({ 'Content-Type': 'application/json' }, friendFeedHeaders(true)),
+                body: JSON.stringify(payload)
+            }).then(function() {
+                setStatus('远端配置已保存。', 'success');
+                return loadRemoteData();
+            }).catch(function(error) {
+                setStatus(error && error.message ? error.message : '远端配置保存失败。', 'error');
+            }).then(function() {
+                setBusy(false);
+            });
+        }
+
+        function createFeed() {
+            if (!requireBaseUrl() || !requireToken()) return;
+            var data = readFeedForm(newForm);
+            if (!data.site_url || !data.feed_url) {
+                setStatus('请填写站点 URL 和 RSS URL。', 'error');
+                return;
+            }
+
+            setBusy(true);
+            setStatus('正在添加 RSS 源...');
+            friendFeedFetchJson(friendFeedEndpoint('/api/admin/feeds'), {
+                method: 'POST',
+                headers: Object.assign({ 'Content-Type': 'application/json' }, friendFeedHeaders(true)),
+                body: JSON.stringify(data)
+            }).then(function() {
+                setFeedForm(newForm, {});
+                if (discoverInput) discoverInput.value = '';
+                setStatus('RSS 源已添加。', 'success');
+                return loadRemoteData();
+            }).catch(function(error) {
+                setStatus(error && error.message ? error.message : 'RSS 源添加失败。', 'error');
+            }).then(function() {
+                setBusy(false);
+            });
+        }
+
+        function discoverFeed() {
+            if (!requireBaseUrl() || !requireToken()) return;
+            var siteUrl = trim(discoverInput ? discoverInput.value : '');
+            if (!siteUrl) {
+                setStatus('请先填写要发现的站点 URL。', 'error');
+                return;
+            }
+
+            setBusy(true);
+            setStatus('正在发现 RSS/Atom 地址...');
+            friendFeedFetchJson(friendFeedEndpoint('/api/admin/feeds/discover'), {
+                method: 'POST',
+                headers: Object.assign({ 'Content-Type': 'application/json' }, friendFeedHeaders(true)),
+                body: JSON.stringify({ site_url: siteUrl })
+            }).then(function(payload) {
+                setFeedForm(newForm, payload && payload.data ? payload.data : {});
+                setStatus('已发现 RSS/Atom 地址，请检查后保存。', 'success');
+            }).catch(function(error) {
+                setStatus(error && error.message ? error.message : '没有发现可用 RSS/Atom 地址。', 'error');
+            }).then(function() {
+                setBusy(false);
+            });
+        }
+
+        function saveFeed(row) {
+            if (!requireBaseUrl() || !requireToken() || !row) return;
+            var id = row.getAttribute('data-rss-feed-id');
+            var data = readFeedForm($('[data-rss-feed-form]', row));
+
+            setBusy(true);
+            setStatus('正在保存 RSS 源...');
+            friendFeedFetchJson(friendFeedEndpoint('/api/admin/feeds/' + encodeURIComponent(id)), {
+                method: 'PUT',
+                headers: Object.assign({ 'Content-Type': 'application/json' }, friendFeedHeaders(true)),
+                body: JSON.stringify(data)
+            }).then(function() {
+                setStatus('RSS 源已保存。', 'success');
+                return loadRemoteData();
+            }).catch(function(error) {
+                setStatus(error && error.message ? error.message : 'RSS 源保存失败。', 'error');
+            }).then(function() {
+                setBusy(false);
+            });
+        }
+
+        function deleteFeed(row) {
+            if (!requireBaseUrl() || !requireToken() || !row) return;
+            var id = row.getAttribute('data-rss-feed-id');
+            var titleEl = $('.qiwi-rss-feed-main strong', row);
+            var title = trim(titleEl ? titleEl.textContent : '') || '这个 RSS 源';
+            if (!window.confirm('确定删除“' + title + '”吗？关联文章也会一起删除。')) return;
+
+            setBusy(true);
+            setStatus('正在删除 RSS 源...');
+            friendFeedFetchJson(friendFeedEndpoint('/api/admin/feeds/' + encodeURIComponent(id)), {
+                method: 'DELETE',
+                headers: friendFeedHeaders(true)
+            }).then(function() {
+                setStatus('RSS 源已删除。', 'success');
+                return loadRemoteData();
+            }).catch(function(error) {
+                setStatus(error && error.message ? error.message : 'RSS 源删除失败。', 'error');
+            }).then(function() {
+                setBusy(false);
+            });
+        }
+
+        function fetchFeed(row) {
+            if (!requireBaseUrl() || !requireToken() || !row) return;
+            var id = row.getAttribute('data-rss-feed-id');
+            setBusy(true);
+            setStatus('正在抓取 RSS 源...');
+            friendFeedFetchJson(friendFeedEndpoint('/api/admin/feeds/' + encodeURIComponent(id) + '/fetch'), {
+                method: 'POST',
+                headers: friendFeedHeaders(true)
+            }).then(function() {
+                setStatus('抓取请求已完成。', 'success');
+                return loadRemoteData();
+            }).catch(function(error) {
+                setStatus(error && error.message ? error.message : '抓取失败。', 'error');
+            }).then(function() {
+                setBusy(false);
+            });
+        }
+
+        function fetchAllFeeds() {
+            if (!requireBaseUrl() || !requireToken()) return;
+            setBusy(true);
+            setStatus('正在抓取所有启用的 RSS 源...');
+            friendFeedFetchJson(friendFeedEndpoint('/api/admin/fetch-all'), {
+                method: 'POST',
+                headers: friendFeedHeaders(true)
+            }).then(function() {
+                setStatus('全部抓取已完成。', 'success');
+                return loadRemoteData();
+            }).catch(function(error) {
+                setStatus(error && error.message ? error.message : '全部抓取失败。', 'error');
+            }).then(function() {
+                setBusy(false);
+            });
+        }
+
+        if (checkButton) checkButton.addEventListener('click', loadRemoteData);
+        if (refreshButton) refreshButton.addEventListener('click', loadRemoteData);
+        if (fetchAllButton) fetchAllButton.addEventListener('click', fetchAllFeeds);
+        if (saveButton) saveButton.addEventListener('click', saveRemoteSettings);
+
+        root.addEventListener('click', function(event) {
+            var button = event.target.closest('[data-rss-action]');
+            if (!button) return;
+            var action = button.getAttribute('data-rss-action');
+            var row = button.closest('[data-rss-feed-id]');
+
+            if (action === 'discover') discoverFeed();
+            if (action === 'create') createFeed();
+            if (action === 'save-feed') saveFeed(row);
+            if (action === 'delete-feed') deleteFeed(row);
+            if (action === 'fetch-feed') fetchFeed(row);
+            if (action === 'toggle' && row) {
+                var isOpen = !row.classList.contains('is-open');
+                row.classList.toggle('is-open', isOpen);
+                button.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            }
+        });
+
+        if (normalizeFriendFeedBaseUrl(getFieldValueByName('friendFeedBaseUrl'))) {
+            loadRemoteData();
+        }
+    }
+
+    function initExternalLinkStats(panel) {
+        var container = $('[data-qiwi-external-stats]', panel);
+        if (!container || container.dataset.qiwiStatsReady === '1') return;
+
+        container.dataset.qiwiStatsReady = '1';
+        var config = getAdminConfig();
+        var rows = Array.isArray(config.externalLinkStats) ? config.externalLinkStats : [];
+        var total = rows.reduce(function(sum, row) {
+            return sum + (parseInt(row.clicks || 0, 10) || 0);
+        }, 0);
+
+        if (!rows.length) {
+            container.innerHTML =
+                '<section class="qiwi-link-stats-empty">' +
+                    '<strong>还没有外链点击记录</strong>' +
+                    '<p>前台外链被点击时，会通过后台请求记录，不再跳到中间页。</p>' +
+                '</section>';
+            return;
+        }
+
+        container.innerHTML =
+            '<section class="qiwi-link-stats-summary">' +
+                '<div><span>已记录链接</span><strong>' + rows.length + '</strong></div>' +
+                '<div><span>累计点击</span><strong>' + total + '</strong></div>' +
+            '</section>' +
+            '<div class="qiwi-link-stats-table">' +
+                '<div class="qiwi-link-stats-row qiwi-link-stats-head">' +
+                    '<span>域名</span><span>点击</span><span>最后点击</span><span>真实 URL</span>' +
+                '</div>' +
+                rows.map(function(row) {
+                    return '<div class="qiwi-link-stats-row">' +
+                        '<span>' + escapeHtml(row.host || '-') + '</span>' +
+                        '<span>' + escapeHtml(row.clicks || 0) + '</span>' +
+                        '<span>' + escapeHtml(row.lastClicked || '-') + '</span>' +
+                        '<a href="' + escapeHtml(row.url || '#') + '" target="_blank" rel="noopener noreferrer" title="' + escapeHtml(row.url || '') + '">' + escapeHtml(row.url || '-') + '</a>' +
+                    '</div>';
+                }).join('') +
+            '</div>';
+    }
+
+    function initIpLocationTools(panel) {
+        var container = $('[data-qiwi-ip-location-tools]', panel);
+        if (!container || container.dataset.qiwiIpToolsReady === '1') return;
+
+        container.dataset.qiwiIpToolsReady = '1';
+        var config = getAdminConfig();
+        var endpoint = config.ipLocationRebuildEndpoint || '';
+
+        if (!endpoint) {
+            container.innerHTML =
+                '<section class="qiwi-link-stats-empty">' +
+                    '<strong>IP 归属地工具不可用</strong>' +
+                    '<p>启用 Qiwi Theme 伴生插件后，可以在这里重建评论 IP 归属地缓存。</p>' +
+                '</section>';
+            return;
+        }
+
+        container.innerHTML =
+            '<section class="qiwi-ip-location-tools">' +
+                '<strong>评论 IP 归属地缓存</strong>' +
+                '<p>评论发布时会写入缓存；旧评论或缓存缺失时，可在这里重新整理。</p>' +
+                '<div class="qiwi-admin-toolbar">' +
+                    '<button type="button" class="qiwi-admin-button is-primary" data-ip-location-rebuild="all"><i class="fa-solid fa-rotate" aria-hidden="true"></i>全量刷新</button>' +
+                    '<button type="button" class="qiwi-admin-button" data-ip-location-rebuild="missing"><i class="fa-solid fa-filter-circle-xmark" aria-hidden="true"></i>补齐未缓存</button>' +
+                    '<span data-ip-location-status></span>' +
+                '</div>' +
+            '</section>';
+
+        var status = $('[data-ip-location-status]', container);
+        var buttons = $all('[data-ip-location-rebuild]', container);
+        if (!buttons.length || !status) return;
+
+        function setButtonsDisabled(disabled) {
+            buttons.forEach(function(other) {
+                other.disabled = disabled;
+            });
+        }
+
+        function formatProgress(label, totals, result) {
+            var scanned = result.scanned || 0;
+            var updated = result.updated || 0;
+            var failed = result.failed || 0;
+            var total = result.pending || result.total || 0;
+            totals.scanned += scanned;
+            totals.updated += updated;
+            totals.failed += failed;
+            totals.total = Math.max(totals.total, total);
+
+            var prefix = label + '中';
+            if (totals.total > 0) {
+                prefix += '：已处理 ' + Math.min(totals.scanned, totals.total) + ' / ' + totals.total;
+            } else {
+                prefix += '：没有需要处理的 IP';
+            }
+
+            return prefix + '，写入 ' + totals.updated + ' 个，失败 ' + totals.failed + ' 个。';
+        }
+
+        function runBatch(mode, label, totals) {
+            var payload = new URLSearchParams();
+            payload.set('mode', mode);
+            payload.set('limit', '20');
+
+            return fetch(endpoint, {
+                method: 'POST',
+                body: payload,
+                credentials: 'same-origin'
+            }).then(function(response) {
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                return response.json();
+            }).then(function(payload) {
+                var result = payload && payload.result ? payload.result : {};
+                status.textContent = formatProgress(label, totals, result);
+
+                if (result.hasMore && (result.updated || result.scanned === 0)) {
+                    return runBatch(mode, label, totals);
+                }
+
+                if (result.hasMore && result.failed) {
+                    status.textContent = label + '暂停：已处理 ' + totals.scanned + ' 个，写入 ' + totals.updated + ' 个，失败 ' + totals.failed + ' 个。可稍后重试。';
+                    return;
+                }
+
+                status.textContent = label + '完成：处理 ' + totals.scanned + ' 个，写入 ' + totals.updated + ' 个，失败 ' + totals.failed + ' 个。';
+            });
+        }
+
+        buttons.forEach(function(button) {
+            button.addEventListener('click', function() {
+                var mode = button.getAttribute('data-ip-location-rebuild') || 'missing';
+                var label = mode === 'all' ? '全量刷新' : '补齐未缓存';
+                var totals = { scanned: 0, updated: 0, failed: 0, total: 0 };
+                setButtonsDisabled(true);
+                status.textContent = '正在' + label + '...';
+
+                runBatch(mode, label, totals).catch(function() {
+                    status.textContent = label + '失败，请稍后重试。';
+                }).then(function() {
+                    setButtonsDisabled(false);
+                });
+            });
+        });
+    }
+
+    function initLikeRecords(panel) {
+        var recordsContainer = $('[data-qiwi-like-records]', panel);
+        var statsContainer = $('[data-qiwi-post-like-stats]', panel);
+        var config = getAdminConfig();
+        var momentRows = Array.isArray(config.momentLikeRecords) ? config.momentLikeRecords : [];
+        var postRows = Array.isArray(config.postLikeRecords) ? config.postLikeRecords : [];
+        var articleRows = Array.isArray(config.postLikeArticleStats) ? config.postLikeArticleStats : [];
+        var identityLabels = {
+            mail: '邮箱',
+            user: '登录用户',
+            cookie: 'Cookie'
+        };
+
+        function renderMatches(matches) {
+            if (!Array.isArray(matches) || !matches.length) {
+                return '<span class="qiwi-like-muted">暂未匹配评论</span>';
+            }
+
+            return '<span class="qiwi-like-muted">匹配评论者：' +
+                matches.slice(0, 3).map(function(match) {
+                    return escapeHtml(match && match.author ? match.author : '未命名');
+                }).join('、') +
+                '</span>';
+        }
+
+        function renderIdentity(row) {
+            var identityType = row && row.identityType ? row.identityType : 'cookie';
+            var identityLabel = identityLabels[identityType] || identityType;
+            var author = row && row.author ? row.author : identityLabel;
+            return '<span><strong>' + escapeHtml(author) + '</strong><em>' + escapeHtml(identityLabel + (row && row.userId ? ' · UID ' + row.userId : '')) + '</em></span>';
+        }
+
+        function renderMail(row) {
+            var mailHash = row && row.mailHash ? row.mailHash : '';
+            if (!mailHash) {
+                return '<span class="qiwi-like-muted">无邮箱</span>';
+            }
+
+            return '<code>' + escapeHtml(mailHash.slice(0, 12)) + '...</code>' + renderMatches(row.matches);
+        }
+
+        function postStatus(post) {
+            var items = [];
+            if (post && post.status) items.push(post.status);
+            if (post && post.type) items.push(post.type);
+            return items.join(' · ');
+        }
+
+        function renderPostRef(post, cid) {
+            var title = post && post.title ? post.title : '文章 #' + (cid || '-');
+            var meta = '#' + (cid || '-') + (post && post.slug ? ' · ' + post.slug : '');
+            var titleHtml = post && post.permalink
+                ? '<a href="' + escapeHtml(post.permalink) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(title) + '</a>'
+                : '<strong>' + escapeHtml(title) + '</strong>';
+            return '<span>' + titleHtml + '<em>' + escapeHtml(meta) + '</em></span>';
+        }
+
+        function renderMomentTable(rows) {
+            if (!rows.length) {
+                return '<section class="qiwi-link-stats-empty"><strong>还没有说说点赞记录</strong><p>说说被点赞后会显示在这里。</p></section>';
+            }
+
+            return '<section class="qiwi-like-records-block">' +
+                '<h3>说说点赞记录</h3>' +
+                '<div class="qiwi-link-stats-table qiwi-like-records-table">' +
+                    '<div class="qiwi-link-stats-row qiwi-like-records-row qiwi-link-stats-head">' +
+                        '<span>时间</span><span>身份</span><span>邮箱关联</span><span>对应说说</span><span>来源</span>' +
+                    '</div>' +
+                    rows.map(function(row) {
+                        var moment = row && row.moment ? row.moment : {};
+                        return '<div class="qiwi-link-stats-row qiwi-like-records-row">' +
+                            '<span>' + escapeHtml(row && row.createdText ? row.createdText : '-') + '</span>' +
+                            renderIdentity(row) +
+                            '<span>' + renderMail(row) + '</span>' +
+                            '<span><strong>#' + escapeHtml(row && row.coid ? row.coid : '-') + '</strong><em>' + escapeHtml(moment.excerpt || '') + '</em></span>' +
+                            '<span>' + escapeHtml(moment.title || '-') + '</span>' +
+                        '</div>';
+                    }).join('') +
+                '</div>' +
+            '</section>';
+        }
+
+        function renderPostTable(rows) {
+            if (!rows.length) {
+                return '<section class="qiwi-link-stats-empty"><strong>还没有文章点赞记录</strong><p>文章被点赞后会显示在这里。</p></section>';
+            }
+
+            return '<section class="qiwi-like-records-block">' +
+                '<h3>文章点赞记录</h3>' +
+                '<div class="qiwi-link-stats-table qiwi-like-records-table">' +
+                    '<div class="qiwi-link-stats-row qiwi-like-records-row qiwi-link-stats-head">' +
+                        '<span>时间</span><span>身份</span><span>邮箱关联</span><span>对应文章</span><span>状态</span>' +
+                    '</div>' +
+                    rows.map(function(row) {
+                        var post = row && row.post ? row.post : {};
+                        return '<div class="qiwi-link-stats-row qiwi-like-records-row">' +
+                            '<span>' + escapeHtml(row && row.createdText ? row.createdText : '-') + '</span>' +
+                            renderIdentity(row) +
+                            '<span>' + renderMail(row) + '</span>' +
+                            renderPostRef(post, row && row.cid ? row.cid : 0) +
+                            '<span>' + escapeHtml(postStatus(post) || '-') + '</span>' +
+                        '</div>';
+                    }).join('') +
+                '</div>' +
+            '</section>';
+        }
+
+        if (recordsContainer && recordsContainer.dataset.qiwiStatsReady !== '1') {
+            recordsContainer.dataset.qiwiStatsReady = '1';
+            var allRows = momentRows.length + postRows.length;
+            var mailRows = momentRows.concat(postRows).filter(function(row) {
+                return row && row.mailHash;
+            }).length;
+
+            if (!allRows) {
+                recordsContainer.innerHTML =
+                    '<section class="qiwi-link-stats-empty">' +
+                        '<strong>还没有点赞记录</strong>' +
+                        '<p>说说或文章被点赞后会记录在伴生插件表中；带邮箱身份的点赞会显示邮箱 hash 和评论匹配结果。</p>' +
+                    '</section>';
+            } else {
+                recordsContainer.innerHTML =
+                    '<section class="qiwi-link-stats-summary qiwi-like-records-summary">' +
+                        '<div><span>最近记录</span><strong>' + allRows + '</strong></div>' +
+                        '<div><span>说说点赞</span><strong>' + momentRows.length + '</strong></div>' +
+                        '<div><span>文章点赞</span><strong>' + postRows.length + '</strong></div>' +
+                        '<div><span>邮箱身份</span><strong>' + mailRows + '</strong></div>' +
+                    '</section>' +
+                    renderMomentTable(momentRows) +
+                    renderPostTable(postRows);
+            }
+        }
+
+        if (statsContainer && statsContainer.dataset.qiwiStatsReady !== '1') {
+            statsContainer.dataset.qiwiStatsReady = '1';
+            if (!articleRows.length) {
+                statsContainer.innerHTML =
+                    '<section class="qiwi-link-stats-empty">' +
+                        '<strong>还没有文章点赞统计</strong>' +
+                        '<p>文章被点赞后会按文章汇总显示数量。</p>' +
+                    '</section>';
+                return;
+            }
+
+            var totalLikes = articleRows.reduce(function(total, row) {
+                return total + (row && row.likes ? Number(row.likes) : 0);
+            }, 0);
+
+            statsContainer.innerHTML =
+                '<section class="qiwi-link-stats-summary">' +
+                    '<div><span>有点赞的文章</span><strong>' + articleRows.length + '</strong></div>' +
+                    '<div><span>文章点赞总数</span><strong>' + totalLikes + '</strong></div>' +
+                '</section>' +
+                '<div class="qiwi-link-stats-table qiwi-post-like-stats-table">' +
+                    '<div class="qiwi-link-stats-row qiwi-post-like-stats-row qiwi-link-stats-head">' +
+                        '<span>文章</span><span>点赞数</span><span>最近点赞</span><span>状态</span>' +
+                    '</div>' +
+                    articleRows.map(function(row) {
+                        var post = row && row.post ? row.post : {};
+                        return '<div class="qiwi-link-stats-row qiwi-post-like-stats-row">' +
+                            renderPostRef(post, row && row.cid ? row.cid : 0) +
+                            '<span><strong>' + escapeHtml(row && row.likes ? row.likes : 0) + '</strong></span>' +
+                            '<span>' + escapeHtml(row && row.lastLikedText ? row.lastLikedText : '-') + '</span>' +
+                            '<span>' + escapeHtml(postStatus(post) || '-') + '</span>' +
+                        '</div>';
+                    }).join('') +
+                '</div>';
+        }
+    }
+    function compareVersions(a, b) {
+        var left = String(a || '').replace(/^v/i, '').split(/[.-]/);
+        var right = String(b || '').replace(/^v/i, '').split(/[.-]/);
+        var length = Math.max(left.length, right.length);
+
+        for (var i = 0; i < length; i++) {
+            var lRaw = left[i] || '0';
+            var rRaw = right[i] || '0';
+            var lNum = parseInt(lRaw, 10);
+            var rNum = parseInt(rRaw, 10);
+
+            if (!isNaN(lNum) || !isNaN(rNum)) {
+                lNum = isNaN(lNum) ? 0 : lNum;
+                rNum = isNaN(rNum) ? 0 : rNum;
+                if (lNum !== rNum) return lNum > rNum ? 1 : -1;
+                continue;
+            }
+
+            if (lRaw !== rRaw) return lRaw > rRaw ? 1 : -1;
+        }
+
+        return 0;
+    }
+
+    function normalizeNotes(notes) {
+        if (Array.isArray(notes)) return notes;
+        return String(notes || '').split(/\r\n|\r|\n/).map(function(line) {
+            return trim(line.replace(/^[-*]\s*/, ''));
+        }).filter(Boolean);
+    }
+
+    function readUpdateCache(key, ttl) {
+        try {
+            var cached = JSON.parse(localStorage.getItem(key) || 'null');
+            if (cached && cached.time && Date.now() - cached.time < ttl) {
+                return cached.data;
+            }
+        } catch (error) {}
+        return null;
+    }
+
+    function writeUpdateCache(key, data) {
+        try {
+            localStorage.setItem(key, JSON.stringify({
+                time: Date.now(),
+                data: data
+            }));
+        } catch (error) {}
+    }
+
+    function updateSourceKey() {
+        var config = getAdminConfig();
+        return 'qiwi:update-source:' + (config.repositoryUrl || config.updateEndpoint || 'default');
+    }
+
+    function readUpdateSource() {
+        try {
+            var value = localStorage.getItem(updateSourceKey());
+            return value === 'raw' ? 'raw' : 'api';
+        } catch (error) {
+            return 'api';
+        }
+    }
+
+    function writeUpdateSource(value) {
+        try {
+            localStorage.setItem(updateSourceKey(), value === 'raw' ? 'raw' : 'api');
+        } catch (error) {}
+    }
+
+    function currentUpdateEndpoint() {
+        var config = getAdminConfig();
+        return readUpdateSource() === 'raw' ?
+            (config.updateRawEndpoint || config.updateEndpoint) :
+            (config.updateApiEndpoint || config.updateEndpoint);
+    }
+
+    function currentUpdateSourceLabel() {
+        return readUpdateSource() === 'raw' ? 'Raw update.json' : 'GitHub API';
+    }
+
+    function decodeBase64Utf8(value) {
+        var binary = window.atob(String(value || '').replace(/\s+/g, ''));
+        if (window.TextDecoder && window.Uint8Array) {
+            var bytes = new Uint8Array(binary.length);
+            for (var i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            return new TextDecoder('utf-8').decode(bytes);
+        }
+        return decodeURIComponent(escape(binary));
+    }
+
+    function normalizeUpdatePayload(payload) {
+        if (payload && payload.content && String(payload.encoding || '').toLowerCase() === 'base64') {
+            return JSON.parse(decodeBase64Utf8(payload.content));
+        }
+
+        return payload;
+    }
+
+    function fetchUpdateMetadata(endpoint) {
+        return fetch(endpoint, { cache: 'no-store' })
+            .then(function(response) {
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                return response.json();
+            })
+            .then(normalizeUpdatePayload);
+    }
+
+    function customUpdateRootKey() {
+        var config = getAdminConfig();
+        return 'qiwi:update-root:' + (config.themeRelativeDir || 'usr/themes/qiwi');
+    }
+
+    function readCustomUpdateRoot() {
+        try {
+            return trim(localStorage.getItem(customUpdateRootKey()) || '');
+        } catch (error) {
+            return '';
+        }
+    }
+
+    function writeCustomUpdateRoot(value) {
+        try {
+            value = trim(value);
+            if (value) {
+                localStorage.setItem(customUpdateRootKey(), value);
+            } else {
+                localStorage.removeItem(customUpdateRootKey());
+            }
+        } catch (error) {}
+    }
+
+    function normalizeRootPath(value) {
+        return trim(value).replace(/[\\\/]+$/g, '');
+    }
+
+    function joinCommandPath(root, relative) {
+        return normalizeRootPath(root) + '/' + String(relative || 'usr/themes/qiwi').replace(/^[\\\/]+/g, '');
+    }
+
+    function shellQuote(value) {
+        return "'" + String(value || '').replace(/'/g, "'\"'\"'") + "'";
+    }
+
+    function buildCustomUpdateCommand(root) {
+        var config = getAdminConfig();
+        return 'cd ' + shellQuote(joinCommandPath(root, config.themeRelativeDir || 'usr/themes/qiwi')) + ' && bash update.sh';
+    }
+
+    function currentUpdateCommand() {
+        var config = getAdminConfig();
+        var customRoot = readCustomUpdateRoot();
+        return customRoot ? buildCustomUpdateCommand(customRoot) : (config.updateCommand || 'bash update.sh');
+    }
+
+    function refreshUpdateCommand(panel) {
+        var commandText = $('.qiwi-update-command code', panel);
+        var settingsButton = $('[data-update-settings]', panel);
+        var customRoot = readCustomUpdateRoot();
+        var customSource = readUpdateSource() !== 'api';
+
+        if (commandText) commandText.textContent = currentUpdateCommand();
+        if (settingsButton) {
+            settingsButton.classList.toggle('is-active', !!customRoot || customSource);
+            settingsButton.title = customRoot || customSource ? '已自定义更新设置' : '设置 Typecho 根目录与更新源';
+            settingsButton.setAttribute('aria-label', settingsButton.title);
+        }
+    }
+
+    function renderUpdateDetails(panel, data, isOutdated) {
+        var notes = normalizeNotes(data && data.notes);
+        var details = $('.qiwi-update-details', panel);
+        var commandText = $('.qiwi-update-command code', panel);
+        var copyButton = $('[data-update-copy]', panel);
+
+        if (!details || !commandText || !copyButton) return;
+
+        commandText.textContent = currentUpdateCommand();
+        copyButton.disabled = false;
+
+        details.innerHTML =
+            '<div class="qiwi-update-log-title">' + (isOutdated ? '可用更新' : '当前版本说明') + '</div>' +
+            '<ul class="qiwi-update-log">' +
+                (notes.length ? notes.map(function(note) {
+                    return '<li>' + escapeHtml(note) + '</li>';
+                }).join('') : '<li>远程版本暂未填写更新说明。</li>') +
+            '</ul>';
+    }
+
+    function setUpdateState(panel, state, data) {
+        var config = getAdminConfig();
+        var status = $('.qiwi-update-status', panel);
+        var title = $('.qiwi-update-title', panel);
+        var subtitle = $('.qiwi-update-subtitle', panel);
+        var current = config.currentVersion || 'unknown';
+        var latest = data && data.version ? String(data.version) : '';
+        var isOutdated = latest && compareVersions(latest, current) > 0;
+
+        panel.setAttribute('data-update-state', state);
+        panel.classList.toggle('is-expandable', state === 'ready');
+
+        if (state === 'checking') {
+            status.innerHTML = '<span class="qiwi-update-spinner" aria-hidden="true"></span><span>检查中</span>';
+            title.textContent = '正在检查 Qiwi 主题更新';
+            subtitle.textContent = '当前版本 v' + current + '，正在通过 ' + currentUpdateSourceLabel() + ' 读取 update.json';
+            return;
+        }
+
+        if (state === 'error') {
+            status.innerHTML = '<i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><span>检查失败</span>';
+            title.textContent = '暂时无法检查更新';
+            subtitle.textContent = '当前版本 v' + current + '，可以稍后重试或手动运行更新脚本。';
+            return;
+        }
+
+        status.innerHTML = isOutdated ?
+            '<i class="fa-solid fa-arrow-up" aria-hidden="true"></i><span>发现新版本</span>' :
+            '<i class="fa-solid fa-circle-check" aria-hidden="true"></i><span>已是最新版</span>';
+        title.textContent = isOutdated ? 'Qiwi v' + latest + ' 可更新' : 'Qiwi v' + current + ' 已是最新版';
+        subtitle.textContent = isOutdated ?
+            '点击展开更新日志，确认后在服务器执行下方命令。' :
+            '远程版本 v' + (latest || current) + '，来自 ' + currentUpdateSourceLabel() + '，点击可查看当前更新说明。';
+        renderUpdateDetails(panel, data || {}, isOutdated);
+    }
+
+    function initUpdatePanel(target) {
+        var config = getAdminConfig();
+        if (!config.updateEndpoint || config.showUpdateLog === '0' || $('.qiwi-update-panel')) return;
+
+        var panel = document.createElement('div');
+        panel.className = 'qiwi-update-panel';
+        panel.innerHTML =
+            '<button type="button" class="qiwi-update-card" aria-expanded="false">' +
+                '<span class="qiwi-update-main">' +
+                    '<span class="qiwi-update-title">正在检查 Qiwi 主题更新</span>' +
+                    '<span class="qiwi-update-subtitle">当前版本 v' + escapeHtml(config.currentVersion || 'unknown') + '</span>' +
+                '</span>' +
+                '<span class="qiwi-update-status"><span class="qiwi-update-spinner" aria-hidden="true"></span><span>检查中</span></span>' +
+            '</button>' +
+            '<div class="qiwi-update-expand" hidden>' +
+                '<div class="qiwi-update-details"></div>' +
+                '<div class="qiwi-update-command"><code></code><div class="qiwi-update-command-actions"><button type="button" class="qiwi-admin-button" data-update-copy>复制命令</button><button type="button" class="qiwi-admin-button qiwi-icon-button" data-update-settings title="设置 Typecho 根目录" aria-label="设置 Typecho 根目录"><i class="fa-solid fa-gear" aria-hidden="true"></i></button></div></div>' +
+            '</div>' +
+            '<div class="qiwi-update-modal" data-update-modal hidden role="dialog" aria-modal="true" aria-labelledby="qiwi-update-root-title">' +
+                '<div class="qiwi-update-modal-card">' +
+                    '<div class="qiwi-update-modal-head">' +
+                        '<strong id="qiwi-update-root-title">更新设置</strong>' +
+                        '<button type="button" class="qiwi-admin-button qiwi-icon-button" data-update-modal-close title="关闭" aria-label="关闭"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>' +
+                    '</div>' +
+                    '<fieldset class="qiwi-update-source-field">' +
+                        '<legend>更新源</legend>' +
+                        '<label><input type="radio" name="qiwi-update-source" value="api" data-update-source-input>GitHub API</label>' +
+                        '<label><input type="radio" name="qiwi-update-source" value="raw" data-update-source-input>Raw update.json</label>' +
+                    '</fieldset>' +
+                    '<p class="qiwi-update-root-help">默认使用 GitHub Contents API；如果你的环境访问 API 受限，可以切回 raw 文件。</p>' +
+                    '<label class="qiwi-update-root-field">Typecho 根目录<input type="text" data-update-root-input placeholder="/srv/typecho"></label>' +
+                    '<p class="qiwi-update-root-help">填写 /usr 前一级目录；保存后会拼接到 ' + escapeHtml(config.themeRelativeDir || 'usr/themes/qiwi') + '。</p>' +
+                    '<code class="qiwi-update-root-preview" data-update-root-preview></code>' +
+                    '<div class="qiwi-update-modal-actions">' +
+                        '<button type="button" class="qiwi-admin-button" data-update-root-clear>恢复默认</button>' +
+                        '<button type="button" class="qiwi-admin-button" data-update-modal-cancel>取消</button>' +
+                        '<button type="button" class="qiwi-admin-button is-primary" data-update-root-save>保存</button>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+
+        if (!target) return;
+        target.appendChild(panel);
+
+        var card = $('.qiwi-update-card', panel);
+        var expand = $('.qiwi-update-expand', panel);
+        var copyButton = $('[data-update-copy]', panel);
+        var settingsButton = $('[data-update-settings]', panel);
+        var modal = $('[data-update-modal]', panel);
+        var modalInput = $('[data-update-root-input]', panel);
+        var modalPreview = $('[data-update-root-preview]', panel);
+        var modalSourceInputs = $all('[data-update-source-input]', panel);
+        var currentUpdateData = null;
+
+        function updateRootPreview() {
+            var root = normalizeRootPath(modalInput.value);
+            modalPreview.textContent = root ? buildCustomUpdateCommand(root) : (config.updateCommand || 'bash update.sh');
+        }
+
+        function syncSourceInputs() {
+            var source = readUpdateSource();
+            modalSourceInputs.forEach(function(input) {
+                input.checked = input.value === source;
+            });
+        }
+
+        function selectedUpdateSource() {
+            var selected = modalSourceInputs.filter(function(input) {
+                return input.checked;
+            })[0];
+            return selected && selected.value === 'raw' ? 'raw' : 'api';
+        }
+
+        function openRootModal() {
+            modal.hidden = false;
+            modalInput.value = readCustomUpdateRoot();
+            syncSourceInputs();
+            updateRootPreview();
+            window.requestAnimationFrame(function() {
+                modalInput.focus();
+            });
+        }
+
+        function closeRootModal() {
+            modal.hidden = true;
+            settingsButton.focus();
+        }
+
+        function checkForUpdates(force) {
+            var endpoint = currentUpdateEndpoint();
+            var cacheKey = 'qiwi:update:' + readUpdateSource() + ':' + endpoint;
+            var cached = !force ? readUpdateCache(cacheKey, config.cacheTtl || 21600000) : null;
+
+            setUpdateState(panel, 'checking');
+            refreshUpdateCommand(panel);
+
+            if (cached) {
+                currentUpdateData = cached;
+                setUpdateState(panel, 'ready', cached);
+            }
+
+            if (!window.fetch) {
+                if (!cached) setUpdateState(panel, 'error');
+                return;
+            }
+
+            fetchUpdateMetadata(endpoint)
+                .then(function(data) {
+                    currentUpdateData = data;
+                    writeUpdateCache(cacheKey, data);
+                    setUpdateState(panel, 'ready', data);
+                })
+                .catch(function() {
+                    if (!cached) setUpdateState(panel, 'error');
+                });
+        }
+
+        card.addEventListener('click', function() {
+            if (!panel.classList.contains('is-expandable')) return;
+            var expanded = card.getAttribute('aria-expanded') === 'true';
+            card.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+            expand.hidden = expanded;
+        });
+
+        copyButton.addEventListener('click', function(event) {
+            event.stopPropagation();
+            var command = currentUpdateCommand();
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(command).then(function() {
+                    copyButton.textContent = '已复制';
+                    setTimeout(function() { copyButton.textContent = '复制命令'; }, 1800);
+                });
+                return;
+            }
+
+            var textarea = document.createElement('textarea');
+            textarea.value = command;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                copyButton.textContent = '已复制';
+                setTimeout(function() { copyButton.textContent = '复制命令'; }, 1800);
+            } catch (error) {}
+            document.body.removeChild(textarea);
+        });
+
+        settingsButton.addEventListener('click', function(event) {
+            event.stopPropagation();
+            openRootModal();
+        });
+
+        modalInput.addEventListener('input', updateRootPreview);
+        $('[data-update-root-save]', panel).addEventListener('click', function() {
+            var beforeSource = readUpdateSource();
+            var afterSource = selectedUpdateSource();
+            writeCustomUpdateRoot(normalizeRootPath(modalInput.value));
+            writeUpdateSource(afterSource);
+            refreshUpdateCommand(panel);
+            closeRootModal();
+            if (beforeSource !== afterSource) {
+                checkForUpdates(true);
+            } else if (currentUpdateData) {
+                setUpdateState(panel, 'ready', currentUpdateData);
+            }
+        });
+
+        $('[data-update-root-clear]', panel).addEventListener('click', function() {
+            modalInput.value = '';
+            writeCustomUpdateRoot('');
+            refreshUpdateCommand(panel);
+            updateRootPreview();
+        });
+
+        $('[data-update-modal-cancel]', panel).addEventListener('click', closeRootModal);
+        $('[data-update-modal-close]', panel).addEventListener('click', closeRootModal);
+
+        modal.addEventListener('click', function(event) {
+            if (event.target === modal) closeRootModal();
+        });
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && !modal.hidden) closeRootModal();
+        });
+
+        syncSourceInputs();
+        checkForUpdates(false);
+    }
+
+    function initAdminSaveButton(panel) {
+        var button = $('[data-qiwi-save-trigger]', panel);
+        var form = panel.closest('form');
+        var submit = form ? $('button[type="submit"], input[type="submit"]', form) : null;
+        if (!button || !form || !submit) return;
+
+        button.addEventListener('click', function() {
+            if (submit.click) {
+                submit.click();
+                return;
+            }
+            form.submit();
+        });
+
+        var submitRow = submit.closest('.typecho-option-submit') || submit.closest('ul');
+        if (submitRow) {
+            submitRow.classList.add('qiwi-original-submit');
+        }
+    }
+
+    function initTabs(panel) {
+        var tabs = $all('.qiwi-admin-tab', panel);
+        var panes = $all('.qiwi-admin-pane', panel);
+        var currentTitle = $('[data-qiwi-current-title]', panel);
+        var currentDesc = $('[data-qiwi-current-desc]', panel);
+        var storageKey = 'qiwi_admin_active_pane';
+
+        function activate(tab, persist) {
+            if (!tab) return;
+            var target = tab.getAttribute('data-qiwi-tab');
+            tabs.forEach(function(item) {
+                var active = item === tab;
+                item.classList.toggle('is-active', active);
+                item.setAttribute('aria-selected', active ? 'true' : 'false');
+                item.setAttribute('tabindex', active ? '0' : '-1');
+            });
+            panes.forEach(function(pane) {
+                var active = pane.getAttribute('data-qiwi-pane') === target;
+                pane.classList.toggle('is-active', active);
+                pane.hidden = !active;
+            });
+            if (currentTitle) currentTitle.textContent = tab.getAttribute('data-qiwi-title') || tab.textContent;
+            if (currentDesc) currentDesc.textContent = tab.getAttribute('data-qiwi-desc') || '';
+            if (persist !== false) {
+                try {
+                    localStorage.setItem(storageKey, target);
+                } catch (error) {}
+            }
+        }
+
+        // 把 tab 与面板用 id / aria-controls / aria-labelledby 关联起来，读屏器才能知道激活了哪个面板
+        panes.forEach(function(pane) {
+            var key = pane.getAttribute('data-qiwi-pane') || '';
+            pane.setAttribute('role', 'tabpanel');
+            if (!pane.id) pane.id = 'qiwi-admin-pane-' + key;
+            pane.setAttribute('aria-labelledby', 'qiwi-admin-tab-' + key);
+            pane.setAttribute('tabindex', '0');
+        });
+
+        tabs.forEach(function(tab) {
+            var key = tab.getAttribute('data-qiwi-tab') || '';
+            tab.setAttribute('role', 'tab');
+            if (!tab.id) tab.id = 'qiwi-admin-tab-' + key;
+            tab.setAttribute('aria-controls', 'qiwi-admin-pane-' + key);
+            tab.addEventListener('click', function() {
+                activate(tab);
+            });
+            tab.addEventListener('keydown', function(event) {
+                if (!/^(ArrowDown|ArrowUp|ArrowLeft|ArrowRight)$/.test(event.key)) return;
+                event.preventDefault();
+                var index = tabs.indexOf(tab);
+                var offset = event.key === 'ArrowUp' || event.key === 'ArrowLeft' ? -1 : 1;
+                var next = tabs[(index + offset + tabs.length) % tabs.length];
+                activate(next);
+                next.focus();
+            });
+        });
+
+        var initialTarget = '';
+        try {
+            initialTarget = localStorage.getItem(storageKey) || '';
+        } catch (error) {}
+        var initialTab = initialTarget ? $('[data-qiwi-tab="' + initialTarget + '"]', panel) : null;
+        activate(initialTab || $('.qiwi-admin-tab.is-active', panel) || tabs[0], false);
+    }
+
+    function initFriendAdminTabs(panel) {
+        var root = $('[data-qiwi-friends-admin-tabs]', panel);
+        if (!root || root.dataset.qiwiFriendsAdminTabsReady === '1') return;
+        root.dataset.qiwiFriendsAdminTabsReady = '1';
+
+        var tabs = $all('[data-friends-admin-tab]', root);
+        var panes = $all('[data-friends-admin-panel]', root);
+
+        function activate(target) {
+            tabs.forEach(function(tab) {
+                var active = tab.getAttribute('data-friends-admin-tab') === target;
+                tab.classList.toggle('is-active', active);
+                tab.setAttribute('aria-selected', active ? 'true' : 'false');
+                tab.setAttribute('tabindex', active ? '0' : '-1');
+            });
+            panes.forEach(function(pane) {
+                var active = pane.getAttribute('data-friends-admin-panel') === target;
+                pane.classList.toggle('is-active', active);
+                pane.hidden = !active;
+            });
+        }
+
+        tabs.forEach(function(tab) {
+            tab.addEventListener('click', function() {
+                activate(tab.getAttribute('data-friends-admin-tab'));
+            });
+            tab.addEventListener('keydown', function(event) {
+                if (!/^(ArrowLeft|ArrowRight)$/.test(event.key)) return;
+                event.preventDefault();
+                var index = tabs.indexOf(tab);
+                var offset = event.key === 'ArrowLeft' ? -1 : 1;
+                var next = tabs[(index + offset + tabs.length) % tabs.length];
+                activate(next.getAttribute('data-friends-admin-tab'));
+                next.focus();
+            });
+        });
+
+        activate('links');
+    }
+
+    function insertAtCursor(input, before, after, placeholder) {
+        if (!input) return;
+        var start = input.selectionStart || 0;
+        var end = input.selectionEnd || 0;
+        var value = input.value || '';
+        var selected = value.slice(start, end) || placeholder || '';
+        var insert = before + selected + after;
+        input.value = value.slice(0, start) + insert + value.slice(end);
+        input.focus();
+        var cursorStart = start + before.length;
+        var cursorEnd = cursorStart + selected.length;
+        if (input.setSelectionRange) input.setSelectionRange(cursorStart, cursorEnd);
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    function enhanceMarkupTextarea(name, config) {
+        var textarea = fieldByName(name);
+        var row = fieldRow(textarea);
+        if (!textarea || !row || row.classList.contains('qiwi-markup-enhanced')) return;
+
+        function closeMarkupMenus(root) {
+            $all('.qiwi-markup-menu.is-open', root || document).forEach(function(menu) {
+                menu.classList.remove('is-open');
+                var trigger = $('.qiwi-markup-trigger', menu);
+                if (trigger) trigger.setAttribute('aria-expanded', 'false');
+            });
+        }
+
+        row.classList.add('qiwi-markup-enhanced');
+        var toolbar = document.createElement('div');
+        toolbar.className = 'qiwi-markup-toolbar';
+
+        (config.groups || []).forEach(function(group) {
+            var wrap = document.createElement('div');
+            wrap.className = 'qiwi-markup-menu';
+            wrap.innerHTML =
+                '<button type="button" class="qiwi-admin-button qiwi-markup-trigger" aria-expanded="false">' +
+                    escapeHtml(group.label) +
+                    '<i class="fa-solid fa-chevron-down" aria-hidden="true"></i>' +
+                '</button>' +
+                '<div class="qiwi-markup-popover"></div>';
+            var popover = $('.qiwi-markup-popover', wrap);
+            (group.items || []).forEach(function(item) {
+                var button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'qiwi-markup-option';
+                button.textContent = item.label;
+                if (item.swatch) {
+                    button.setAttribute('data-swatch', item.swatch);
+                }
+                button.addEventListener('click', function() {
+                    insertAtCursor(textarea, item.before || '', item.after || '', item.placeholder || '');
+                    closeMarkupMenus(document);
+                });
+                popover.appendChild(button);
+            });
+            $('.qiwi-markup-trigger', wrap).addEventListener('click', function(event) {
+                event.stopPropagation();
+                var nextState = !wrap.classList.contains('is-open');
+                closeMarkupMenus(document);
+                wrap.classList.toggle('is-open', nextState);
+                var isOpen = wrap.classList.contains('is-open');
+                this.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            });
+            toolbar.appendChild(wrap);
+        });
+
+        toolbar.addEventListener('click', function(event) {
+            event.stopPropagation();
+        });
+
+        document.addEventListener('click', function() {
+            closeMarkupMenus(document);
+        });
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeMarkupMenus(document);
+            }
+        });
+
+        textarea.parentNode.insertBefore(toolbar, textarea);
+    }
+
+    function enhanceSpecialTextareas() {
+        enhanceMarkupTextarea('defaultCopyrightInfo', {
+            groups: [{
+                label: '短代码',
+                items: [
+                    { label: '徽章', before: '[badge color="cyan"]', after: '[/badge]', placeholder: '原创' },
+                    { label: '提示块', before: '[callout type="info" title="提示"]\n', after: '\n[/callout]', placeholder: '说明文字' },
+                    { label: '文本链接', before: '[link href="{permalink}"]', after: '[/link]', placeholder: '原文链接' },
+                    { label: '按钮', before: '[button href="https://example.com"]', after: '[/button]', placeholder: '相关链接' },
+                    { label: '按钮组', before: '[buttons]\n[button href="{permalink}"]', after: '[/button]\n[/buttons]', placeholder: '原文链接' },
+                    { label: 'Not By AI', before: '[not-by-ai]', after: '', placeholder: '' },
+                    { label: 'No AI', before: '[noai]', after: '', placeholder: '' }
+                ]
+            }, {
+                label: '占位符',
+                items: [
+                    { label: '文章链接', before: '{permalink}', after: '', placeholder: '' },
+                    { label: '文章标题', before: '{title}', after: '', placeholder: '' },
+                    { label: '作者', before: '{author}', after: '', placeholder: '' },
+                    { label: '站点名', before: '{site}', after: '', placeholder: '' },
+                    { label: '年份', before: '{year}', after: '', placeholder: '' },
+                    { label: '文集标题', before: '{thread_title}', after: '', placeholder: '' }
+                ]
+            }, {
+                label: '颜色',
+                items: [
+                    { label: '焦糖徽章', swatch: 'caramel', before: '[badge color="caramel"]', after: '[/badge]', placeholder: '文字' },
+                    { label: '绿色徽章', swatch: 'green', before: '[badge color="green"]', after: '[/badge]', placeholder: '文字' },
+                    { label: '蓝色徽章', swatch: 'blue', before: '[badge color="blue"]', after: '[/badge]', placeholder: '文字' },
+                    { label: '紫色徽章', swatch: 'purple', before: '[badge color="purple"]', after: '[/badge]', placeholder: '文字' }
+                ]
+            }]
+        });
+    }
+
+    var CONFIG_FIELD_NAMES = [
+        'logoUrl',
+        'v2EnglishTitle',
+        'v2SidebarSlogan',
+        'v2FooterMotto',
+        'enableTravellings',
+        'sidebarProfileAvatar',
+        'enableBusuanzi',
+        'umamiApiBase',
+        'umamiShareId',
+        'obsidianPushToken',
+        'enableSitemap',
+        'enablePosts',
+        'enablePages',
+        'enableCategories',
+        'enableTags',
+        'enableXsl',
+        'enableRobots',
+        'enableMomentsFeed',
+        'momentsPageCid',
+        'momentsFeedLimit',
+        'enableFeedDiscovery',
+        'enableFeedShortcodeCompat',
+        'enableFeedAvatar',
+        'avatarUrl',
+        'excludedCids',
+        'mailMode',
+        'mailHost',
+        'mailPort',
+        'mailUser',
+        'mailPass',
+        'mailValidate',
+        'mailResendApiKey',
+        'mailResendFrom',
+        'mailResendApiUrl',
+        'mailResendCaFile',
+        'mailFromName',
+        'mailRecipient',
+        'mailContactme',
+        'mailTitleForOwner',
+        'mailTitleForGuest',
+        'mailOwnerTemplate',
+        'mailGuestTemplate',
+        'mailNotifyStatus',
+        'mailSwitches',
+        'mailBatchSize',
+        'mailRateLimitPerSecond',
+        'mailMaxAttempts',
+        'mailLogKeepDays',
+        'mailQueueKey',
+        'thoughtsEnabled',
+        'thoughtsMaxLength',
+        'thoughtsMinSelection',
+        'thoughtsMaxSelection',
+        'thoughtsSubmitInterval',
+        'thoughtsPendingLimit',
+        'thoughtsMailNotify',
+        'sidebarMomentCount',
+        'homeVisibilityDefault',
+        'rssVisibilityDefault',
+        'categoryVisibilityData',
+        'footerInfo',
+        'defaultCopyrightLicense',
+        'defaultCopyrightInfo',
+        'postSupportEnabled',
+        'postSupportQrUrl',
+        'postSupportTopText',
+        'postSupportBottomText',
+        'customCSS',
+        'customJS',
+        'trackingCode',
+        'aboutBio',
+        'aboutAvatar',
+        'friendsData',
+        'friendFeedEnabled',
+        'friendFeedBaseUrl',
+        'friendFeedAdminToken',
+        'friendFeedLimit',
+        'bookReference',
+        'showUpdateLog',
+        'showVersionDrawer',
+        'enabledCaptcha',
+        'navItems',
+        'homeNavTitle'
+    ];
+
+    var RECOMMENDED_DEFAULTS = {
+        logoUrl: '留空时导航栏仅显示站点标题',
+        v2EnglishTitle: 'QIWI JOURNAL',
+        v2SidebarSlogan: '向内求索 · ON AIR',
+        v2FooterMotto: '向内求索，向外生长',
+        sidebarProfileAvatar: '留空时使用“关于页面 - 头像”，再留空使用默认头像',
+        sidebarMomentCount: '4',
+        footerInfo: '留空时使用站点描述',
+        defaultCopyrightLicense: '默认使用 CC BY-NC-ND 4.0',
+        defaultCopyrightInfo: '留空时使用主题内置版权说明',
+        postSupportQrUrl: '填写收款二维码图片 URL',
+        postSupportTopText: '请我喝一杯咖啡吧',
+        postSupportBottomText: '或者评论一下分享你的感受',
+        customCSS: '留空不追加自定义 CSS',
+        customJS: '留空不追加自定义 JS',
+        trackingCode: '留空不加载第三方统计代码',
+        umamiApiBase: '例如 https://trace.example.com（仅 HTTPS）',
+        umamiShareId: 'Umami 分享链接 /share/ 后面的一串 ID',
+        obsidianPushToken: '随机长字符串，留空关闭推送入口',
+        momentsFeedLimit: '20',
+        momentsPageCid: '留空时自动查找 page-timemachine.php 页面',
+        avatarUrl: '留空时依次使用侧栏头像 / 关于页头像 / LOGO',
+        excludedCids: '逗号分隔，例如 12,34,56',
+        mailHost: '例如 smtp.example.com，使用 Resend 时可留空',
+        mailPort: '25，SSL 一般为 465',
+        mailUser: 'SMTP 用户名，一般为邮箱账户',
+        mailResendApiKey: 're_ 开头的 API Key',
+        mailResendFrom: '例如 no-reply@example.com（需已验证域名）',
+        mailResendApiUrl: '默认 https://api.resend.com/emails',
+        mailFromName: '留空使用博客标题',
+        mailRecipient: '留空时使用文章作者个人设置中的邮箱',
+        mailContactme: '留空时使用文章作者个人设置中的邮箱',
+        mailBatchSize: '2',
+        mailRateLimitPerSecond: '2',
+        mailMaxAttempts: '5',
+        mailLogKeepDays: '30',
+        mailQueueKey: '外部定时任务触发地址中的密钥',
+        aboutBio: '写一点关于你的简短介绍',
+        aboutAvatar: '留空时使用默认头像',
+        friendsData: '通过友链结构化 UI 管理，原始数据可留空',
+        friendFeedBaseUrl: '例如 http://127.0.0.1:8080',
+        friendFeedAdminToken: '前台不会输出这个 Token',
+        friendFeedLimit: '10',
+        bookReference: '留空时归档页不显示书籍参考统计',
+        navItems: '留空时自动显示可见独立页面',
+        homeNavTitle: '首页'
+    };
+
+    function applyRecommendedDefaults() {
+        Object.keys(RECOMMENDED_DEFAULTS).forEach(function(name) {
+            var input = fieldByName(name);
+            var row = fieldRow(input);
+            var placeholder = RECOMMENDED_DEFAULTS[name];
+            if (!input || !row || row.classList.contains('qiwi-default-enhanced')) return;
+
+            row.classList.add('qiwi-default-enhanced');
+
+            if (placeholder && /^(input|textarea)$/i.test(input.tagName || '') && !input.getAttribute('placeholder')) {
+                input.setAttribute('placeholder', placeholder);
+            }
+        });
+    }
+
+    function encodeBase64Utf8(value) {
+        value = String(value || '');
+        if (window.TextEncoder && window.Uint8Array) {
+            var bytes = new TextEncoder().encode(value);
+            var binary = '';
+            bytes.forEach(function(byte) {
+                binary += String.fromCharCode(byte);
+            });
+            return window.btoa(binary);
+        }
+        return window.btoa(unescape(encodeURIComponent(value)));
+    }
+
+    var CONFIG_SCHEMA_VERSION = 1;
+
+    // 密钥字段不进整包导出，导入时也跳过：SMTP 密码、Resend API Key
+    // 与邮件队列触发密钥（worker 入口的能力凭证）只留在本站。
+    var CONFIG_SECRET_FIELD_NAMES = ['mailPass', 'mailResendApiKey', 'mailQueueKey'];
+
+    function buildConfigPayload() {
+        var settings = {};
+        CONFIG_FIELD_NAMES.forEach(function(name) {
+            if (CONFIG_SECRET_FIELD_NAMES.indexOf(name) !== -1) return;
+            if (fieldByName(name)) {
+                settings[name] = getFieldValueByName(name);
+            }
+        });
+
+        return {
+            schema: 'qiwi-theme-config',
+            version: CONFIG_SCHEMA_VERSION,
+            exportedAt: new Date().toISOString(),
+            settings: settings
+        };
+    }
+
+    function parseConfigPayload(value) {
+        value = trim(value);
+        if (!value) throw new Error('请输入要导入的配置。');
+
+        try {
+            return JSON.parse(value);
+        } catch (error) {
+            return JSON.parse(decodeBase64Utf8(value));
+        }
+    }
+
+    function applyConfigPayload(payload, editors) {
+        if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+            throw new Error('配置格式不正确。');
+        }
+        if (payload.schema !== 'qiwi-theme-config') {
+            throw new Error('不是 Qiwi 主题配置（schema 不匹配），已取消导入。请使用「整包配置导入 / 导出」生成的 JSON 或 Base64。');
+        }
+
+        var settings = payload.settings && typeof payload.settings === 'object' && !Array.isArray(payload.settings) ? payload.settings : null;
+        if (!settings) {
+            throw new Error('配置缺少 settings 数据，已取消导入。');
+        }
+
+        // 只按已知字段白名单写入，未知键（含已移除的旧选项）静默忽略；
+        // 密钥字段同样跳过并给出提示；更高版本的备份仍尝试导入，但提示可能不完全兼容。
+        var payloadVersion = parseInt(payload.version, 10);
+        var notes = [];
+        if (!isNaN(payloadVersion) && payloadVersion > CONFIG_SCHEMA_VERSION) {
+            notes.push('该配置来自更新的版本（v' + payloadVersion + '），部分字段可能未被识别');
+        }
+
+        var skippedSecrets = [];
+        CONFIG_FIELD_NAMES.forEach(function(name) {
+            if (CONFIG_SECRET_FIELD_NAMES.indexOf(name) !== -1) {
+                if (Object.prototype.hasOwnProperty.call(settings, name)) {
+                    skippedSecrets.push(name);
+                }
+                return;
+            }
+            if (Object.prototype.hasOwnProperty.call(settings, name)) {
+                setFieldValueByName(name, settings[name]);
+            }
+        });
+
+        if (skippedSecrets.length) {
+            notes.push('密钥字段（' + skippedSecrets.join('、') + '）不会随整包导入，请在本站手动填写');
+        }
+
+        Object.keys(editors || {}).forEach(function(key) {
+            if (editors[key] && editors[key].refresh) {
+                editors[key].refresh();
+            }
+        });
+
+        return notes;
+    }
+
+    function rawFieldTitle(row, fallback) {
+        var label = $('label', row);
+        if (label) {
+            return trim(label.textContent).replace(/\s+/g, ' ') || fallback;
+        }
+
+        return fallback;
+    }
+
+    function wrapRawField(row, title) {
+        if (!row || row.closest('.qiwi-raw-details')) return;
+        var details = document.createElement('details');
+        details.className = 'qiwi-raw-details';
+        var summary = document.createElement('summary');
+        summary.textContent = title || rawFieldTitle(row, '原始数据');
+        details.appendChild(summary);
+        row.parentNode.insertBefore(details, row);
+        details.appendChild(row);
+    }
+
+    function initConfigImportExport(rawPane, editors) {
+        if (!rawPane || $('.qiwi-config-transfer', rawPane)) return;
+
+        var panel = document.createElement('div');
+        panel.className = 'qiwi-config-transfer';
+        panel.innerHTML =
+            '<div class="qiwi-config-transfer-head">' +
+                '<strong>整包配置导入 / 导出</strong>' +
+                '<span>导入只会替换当前表单里的配置，仍需点击页面底部保存才会生效。</span>' +
+            '</div>' +
+            '<textarea rows="8" data-config-transfer-text placeholder="导出的 JSON 或 Base64 配置会出现在这里，也可以粘贴配置后导入。"></textarea>' +
+            '<div class="qiwi-admin-toolbar qiwi-config-transfer-actions">' +
+                '<button type="button" class="qiwi-admin-button" data-config-export="json">导出 JSON</button>' +
+                '<button type="button" class="qiwi-admin-button" data-config-export="base64">导出 Base64</button>' +
+                '<button type="button" class="qiwi-admin-button is-primary" data-config-import>导入到当前表单</button>' +
+            '</div>' +
+            '<p class="qiwi-config-transfer-status" data-config-transfer-status></p>';
+        rawPane.insertBefore(panel, rawPane.firstChild);
+
+        var textarea = $('[data-config-transfer-text]', panel);
+        var status = $('[data-config-transfer-status]', panel);
+
+        function setStatus(message, isError) {
+            status.textContent = message || '';
+            status.classList.toggle('is-error', !!isError);
+        }
+
+        $('[data-config-export="json"]', panel).addEventListener('click', function() {
+            textarea.value = JSON.stringify(buildConfigPayload(), null, 2);
+            setStatus('已生成 JSON 配置（SMTP 密码、Resend API Key 与邮件队列密钥不会包含在内）。');
+        });
+
+        $('[data-config-export="base64"]', panel).addEventListener('click', function() {
+            textarea.value = encodeBase64Utf8(JSON.stringify(buildConfigPayload()));
+            setStatus('已生成 Base64 配置（SMTP 密码、Resend API Key 与邮件队列密钥不会包含在内）。');
+        });
+
+        $('[data-config-import]', panel).addEventListener('click', function() {
+            try {
+                var notes = applyConfigPayload(parseConfigPayload(textarea.value), editors);
+                var message = '已导入到当前表单，请检查后点击页面底部保存。';
+                if (notes && notes.length) message += ' 注意：' + notes.join('；') + '。';
+                setStatus(message);
+            } catch (error) {
+                setStatus(error && error.message ? error.message : '导入失败，请检查配置格式。', true);
+            }
+        });
+    }
+
+    function defaultThreadData(rawDescription) {
+        return {
+            schema: 'qiwi-thread',
+            version: 1,
+            subtitle: '',
+            summary: cleanThreadOptional(rawDescription || ''),
+            status: 'ongoing',
+            startedAt: '',
+            field: '',
+            order: 'asc',
+            blocks: []
+        };
+    }
+
+    function parseThreadData(rawDescription) {
+        var text = trim(rawDescription || '');
+        if (!text) return defaultThreadData('');
+
+        try {
+            var data = JSON.parse(text);
+            if (!data || typeof data !== 'object' || Array.isArray(data) || data.schema !== 'qiwi-thread') {
+                return defaultThreadData(text);
+            }
+
+            data.version = parseInt(data.version || 1, 10) || 1;
+            data.subtitle = cleanThreadOptional(data.subtitle || '');
+            data.summary = cleanThreadOptional(data.summary || '');
+            data.status = ['ongoing', 'completed', 'paused'].indexOf(data.status) === -1 ? 'ongoing' : data.status;
+            data.startedAt = cleanThreadOptional(data.startedAt || '');
+            data.field = cleanThreadOptional(data.field || '');
+            data.order = data.order === 'desc' ? 'desc' : 'asc';
+            data.blocks = Array.isArray(data.blocks) ? data.blocks.map(function(block) {
+                if (block && block.type === 'text') block.type = 'markdown';
+                if (block && typeof block === 'object') {
+                    ['slug', 'title', 'label', 'role', 'note', 'content'].forEach(function(key) {
+                        if (Object.prototype.hasOwnProperty.call(block, key)) {
+                            block[key] = cleanThreadOptional(block[key]);
+                        }
+                    });
+                }
+                return block;
+            }) : [];
+            return data;
+        } catch (error) {
+            return defaultThreadData(text);
+        }
+    }
+
+    function cleanThreadOptional(value) {
+        value = trim(value || '');
+        var legacyHint = 'slug 以 thread- 开头时启用。完整结构保存在 Qiwi Theme 伴生插件表，分类描述只保留短摘要。';
+        if (value && trim(value.split(legacyHint).join('')) === '') {
+            return '';
+        }
+
+        return value === '0' ? '' : value;
+    }
+
+    function getThreadBlockField(row, key) {
+        var input = $('[data-thread-block-field="' + key + '"]', row);
+        return input ? input.value : '';
+    }
+
+    function threadBlockSummary(block) {
+        if (!block || block.type === 'post') {
+            return trim(block && (block.title || block.slug || block.cid)) || '未关联文章';
+        }
+        return trim(block.title || block.content) || '文字块';
+    }
+
+    function renderThreadBlock(block, expanded) {
+        block = block || { type: 'post' };
+        var type = block.type === 'post' ? 'post' : 'markdown';
+        var row = document.createElement('div');
+        var chevronSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>';
+        var typeLabel = type === 'post' ? '文章' : '文字';
+        var postTitle = trim(block.title || '');
+        var postHint = postTitle || (block.cid ? ('CID #' + block.cid) : (block.slug ? block.slug : '还没有选择文章'));
+
+        row.className = 'qiwi-thread-block is-' + type + (expanded ? ' is-open' : '');
+        row.setAttribute('data-thread-block-type', type);
+        row.innerHTML =
+            '<button type="button" class="qiwi-thread-block-summary" data-thread-action="toggle-block" aria-expanded="' + (expanded ? 'true' : 'false') + '">' +
+                '<span class="qiwi-thread-block-drag" data-thread-drag draggable="true" title="拖拽排序" aria-hidden="true"><i class="fa-solid fa-grip-vertical"></i></span>' +
+                '<span class="qiwi-thread-block-type">' + escapeHtml(typeLabel) + '</span>' +
+                '<span class="qiwi-thread-block-title">' + escapeHtml(threadBlockSummary(block)) + '</span>' +
+                '<span class="qiwi-thread-block-arrow">' + chevronSvg + '</span>' +
+            '</button>' +
+            '<div class="qiwi-thread-block-editor">' +
+                '<input type="hidden" data-thread-block-field="type" value="' + escapeHtml(type) + '">' +
+                (type === 'post'
+                    ? '<input type="hidden" data-thread-block-field="cid" value="' + escapeHtml(block.cid || '') + '">' +
+                      '<input type="hidden" data-thread-block-field="slug" value="' + escapeHtml(block.slug || '') + '">' +
+                      '<input type="hidden" data-thread-block-field="title" value="' + escapeHtml(postTitle) + '">' +
+                      '<div class="qiwi-thread-post-picker qiwi-thread-wide">' +
+                          '<div><span>已选文章</span><strong data-thread-selected-title>' + escapeHtml(postHint) + '</strong></div>' +
+                          '<button type="button" class="qiwi-admin-button" data-thread-action="choose-post"><i class="fa-regular fa-file-lines" aria-hidden="true"></i> 选择文章</button>' +
+                      '</div>' +
+                      '<label>显示编号<input type="text" data-thread-block-field="label" value="' + escapeHtml(block.label || '') + '" placeholder="例如 01"></label>' +
+                      '<label>角色<input type="text" data-thread-block-field="role" value="' + escapeHtml(block.role || '') + '" placeholder="文章 / 总结 / 起点"></label>' +
+                      '<label class="qiwi-thread-wide">阅读提示 / Markdown<textarea rows="3" data-thread-block-field="note" placeholder="显示在文章摘要下方，可留空">' + escapeHtml(block.note || '') + '</textarea></label>'
+                    : '<label class="qiwi-thread-wide">标题<input type="text" data-thread-block-field="title" value="' + escapeHtml(block.title || '') + '" placeholder="可留空"></label>' +
+                      '<label class="qiwi-thread-wide">文字 / Markdown<textarea rows="7" data-thread-block-field="content" placeholder="支持 Markdown，也可以直接写普通文字">' + escapeHtml(block.content || '') + '</textarea></label>'
+                ) +
+                '<div class="qiwi-row-actions qiwi-thread-wide">' +
+                    '<button type="button" class="qiwi-admin-button qiwi-icon-button" data-thread-action="up" title="上移" aria-label="上移"><i class="fa-solid fa-arrow-up" aria-hidden="true"></i></button>' +
+                    '<button type="button" class="qiwi-admin-button qiwi-icon-button" data-thread-action="down" title="下移" aria-label="下移"><i class="fa-solid fa-arrow-down" aria-hidden="true"></i></button>' +
+                    '<button type="button" class="qiwi-admin-button qiwi-icon-button is-danger" data-thread-action="delete" title="删除块" aria-label="删除块"><i class="fa-regular fa-trash-can" aria-hidden="true"></i></button>' +
+                '</div>' +
+            '</div>';
+
+        return row;
+    }
+
+    function initThreadCategoryEditor() {
+        var description = document.querySelector('textarea[name="description"]');
+        var slugInput = document.querySelector('input[name="slug"]');
+        var nameInput = document.querySelector('input[name="name"]');
+        var toolsConfig = window.QIWI_THEME_TOOLS || window.QIWI_THREAD_TOOLS || {};
+        var threadMid = parseInt(toolsConfig.mid || '0', 10) || 0;
+        if (!description || !slugInput || $('.qiwi-thread-category-panel')) return;
+
+        var row = fieldRow(description) || description.parentNode;
+        if (!row || !row.parentNode) return;
+
+        var panel = document.createElement('div');
+        panel.className = 'qiwi-thread-category-panel';
+        panel.innerHTML =
+            '<div class="qiwi-thread-admin-head">' +
+                '<div><strong>文集配置</strong><p>slug 以 <code>thread-</code> 开头时启用。这里就是文集的主编辑区；文章块会直接决定前台阅读路线，不需要再给文章额外勾选这个分类。</p></div>' +
+            '</div>' +
+            '<div class="qiwi-thread-fields">' +
+                '<label>副标题 / 问题<input type="text" data-thread-field="subtitle" placeholder="例如：我如何重新理解写作？"></label>' +
+                '<label>状态<select data-thread-field="status"><option value="ongoing">连载中</option><option value="completed">已完成</option><option value="paused">暂缓</option></select></label>' +
+                '<label>开始时间<input type="text" data-thread-field="startedAt" placeholder="例如 2026-01"></label>' +
+                '<label>领域<input type="text" data-thread-field="field" placeholder="例如 写作 · 博客"></label>' +
+                '<label>默认排序<select data-thread-field="order"><option value="asc">从旧到新</option><option value="desc">从新到旧</option></select></label>' +
+                '<label class="qiwi-thread-wide">简介 / Markdown<textarea rows="4" data-thread-field="summary" placeholder="这个文集想串起什么问题？"></textarea></label>' +
+            '</div>' +
+            '<div class="qiwi-admin-toolbar qiwi-thread-block-toolbar">' +
+                '<button type="button" class="qiwi-admin-button" data-thread-add="post"><i class="fa-regular fa-file-lines" aria-hidden="true"></i> 添加文章</button>' +
+                '<button type="button" class="qiwi-admin-button" data-thread-add="markdown"><i class="fa-regular fa-pen-to-square" aria-hidden="true"></i> 添加文字</button>' +
+            '</div>' +
+            '<div class="qiwi-thread-block-list" data-thread-block-list></div>' +
+            '<div class="qiwi-thread-footer-actions">' +
+                '<p class="qiwi-thread-status" data-thread-status></p>' +
+                '<div class="qiwi-admin-toolbar">' +
+                    '<button type="button" class="qiwi-admin-button qiwi-icon-button" data-thread-action="open-json" title="查看原始 JSON" aria-label="查看原始 JSON"><i class="fa-solid fa-code" aria-hidden="true"></i></button>' +
+                    '<button type="button" class="qiwi-admin-button is-primary" data-thread-action="save-json"><i class="fa-regular fa-floppy-disk" aria-hidden="true"></i> 保存文集</button>' +
+                '</div>' +
+            '</div>' +
+            '<div class="qiwi-thread-modal" data-thread-post-modal aria-hidden="true">' +
+                '<div class="qiwi-thread-modal-backdrop" data-thread-modal-close></div>' +
+                '<div class="qiwi-thread-modal-panel" role="dialog" aria-modal="true" aria-label="选择文章">' +
+                    '<div class="qiwi-thread-modal-head"><strong>选择文章</strong><button type="button" class="qiwi-admin-button qiwi-icon-button" data-thread-modal-close aria-label="关闭"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></div>' +
+                    '<div class="qiwi-thread-post-search"><input type="search" data-thread-post-search placeholder="搜索标题、slug 或 CID"><button type="button" class="qiwi-admin-button" data-thread-action="search-posts"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> 搜索</button></div>' +
+                    '<div class="qiwi-thread-post-results" data-thread-post-results></div>' +
+                    '<button type="button" class="qiwi-admin-button qiwi-thread-load-more" data-thread-action="load-more-posts">加载更多</button>' +
+                '</div>' +
+            '</div>' +
+            '<div class="qiwi-thread-modal" data-thread-json-modal aria-hidden="true">' +
+                '<div class="qiwi-thread-modal-backdrop" data-thread-modal-close></div>' +
+                '<div class="qiwi-thread-modal-panel" role="dialog" aria-modal="true" aria-label="原始 JSON">' +
+                    '<div class="qiwi-thread-modal-head"><strong>原始 JSON</strong><button type="button" class="qiwi-admin-button qiwi-icon-button" data-thread-modal-close aria-label="关闭"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></div>' +
+                    '<textarea readonly rows="16" data-thread-json-output></textarea>' +
+                    '<div class="qiwi-thread-modal-actions"><button type="button" class="qiwi-admin-button" data-thread-action="copy-json"><i class="fa-regular fa-copy" aria-hidden="true"></i> 复制 JSON</button></div>' +
+                '</div>' +
+            '</div>';
+
+        row.parentNode.insertBefore(panel, row);
+        row.classList.add('qiwi-thread-raw-row');
+
+        var hiddenPayload = document.createElement('input');
+        hiddenPayload.type = 'hidden';
+        hiddenPayload.name = 'qiwiThreadData';
+        if (description.form) {
+            description.form.appendChild(hiddenPayload);
+        }
+
+        var list = $('[data-thread-block-list]', panel);
+        var status = $('[data-thread-status]', panel);
+        var postModal = $('[data-thread-post-modal]', panel);
+        var jsonModal = $('[data-thread-json-modal]', panel);
+        var postResults = $('[data-thread-post-results]', panel);
+        var postSearch = $('[data-thread-post-search]', panel);
+        var jsonOutput = $('[data-thread-json-output]', panel);
+        var draggedBlock = null;
+        var pickerBlock = null;
+        var pickerPage = 1;
+        var pickerQuery = '';
+        var pickerLoading = false;
+        var threadState = defaultThreadData('');
+        var isRendering = false;
+        var pluginDataLoaded = false;
+
+        function isThreadSlug() {
+            return /^thread-/.test(trim(slugInput.value || ''));
+        }
+
+        function setStatus(message, isError) {
+            status.textContent = message || '';
+            status.classList.toggle('is-error', !!isError);
+        }
+
+        function compactDescription(data) {
+            return cleanThreadOptional(data.summary || data.subtitle || '').slice(0, 140);
+        }
+
+        function currentData() {
+            var data = parseThreadData(JSON.stringify(threadState || defaultThreadData('')));
+            $all('[data-thread-field]', panel).forEach(function(input) {
+                data[input.getAttribute('data-thread-field')] = input.value;
+            });
+            data.schema = 'qiwi-thread';
+            data.version = 1;
+            data.blocks = $all('.qiwi-thread-block', list).map(function(blockRow) {
+                var type = getThreadBlockField(blockRow, 'type') || blockRow.getAttribute('data-thread-block-type') || 'post';
+                var block = { type: type };
+                if (type === 'post') {
+                    var cid = parseInt(getThreadBlockField(blockRow, 'cid') || '0', 10);
+                    if (cid > 0) block.cid = cid;
+                    ['slug', 'title', 'label', 'role', 'note'].forEach(function(key) {
+                        var value = cleanThreadOptional(getThreadBlockField(blockRow, key));
+                        if (value) block[key] = value;
+                    });
+                } else {
+                    ['title', 'content'].forEach(function(key) {
+                        var value = cleanThreadOptional(getThreadBlockField(blockRow, key));
+                        if (value) block[key] = value;
+                    });
+                }
+                return block;
+            });
+            return data;
+        }
+
+        function sync() {
+            if (isRendering || !isThreadSlug()) return;
+            var data = currentData();
+            hiddenPayload.value = JSON.stringify(data, null, 2);
+            description.value = compactDescription(data);
+            if (threadMid > 0) {
+                setStatus('文集改动待保存，保存后会同步分类基础信息和完整结构。');
+            } else {
+                setStatus('新增文集会在首次保存时同步分类基础信息和完整结构。');
+            }
+        }
+
+        function render(data) {
+            threadState = parseThreadData(JSON.stringify(data || defaultThreadData('')));
+            isRendering = true;
+            $('[data-thread-field="subtitle"]', panel).value = data.subtitle || '';
+            $('[data-thread-field="summary"]', panel).value = data.summary || '';
+            $('[data-thread-field="status"]', panel).value = data.status || 'ongoing';
+            $('[data-thread-field="startedAt"]', panel).value = data.startedAt || '';
+            $('[data-thread-field="field"]', panel).value = data.field || '';
+            $('[data-thread-field="order"]', panel).value = data.order || 'asc';
+            list.innerHTML = '';
+            (data.blocks || []).forEach(function(block) {
+                list.appendChild(renderThreadBlock(block, false));
+            });
+            if (!list.children.length) {
+                var empty = document.createElement('div');
+                empty.className = 'qiwi-admin-empty';
+                empty.textContent = '还没有内容块。添加文章或文字后，前台会直接按这里的顺序渲染文集。';
+                list.appendChild(empty);
+            }
+            isRendering = false;
+        }
+
+        function updateVisibility() {
+            var active = isThreadSlug();
+            panel.classList.toggle('is-active', active);
+            row.classList.toggle('is-thread-active', active);
+            document.body.classList.toggle('qiwi-thread-editor-page', active);
+            if (active) {
+                loadThreadData();
+            }
+        }
+
+        function endpointWithMid(endpoint) {
+            if (!endpoint) return '';
+            return endpoint + (endpoint.indexOf('?') === -1 ? '?' : '&') + 'mid=' + encodeURIComponent(threadMid);
+        }
+
+        function endpointWithParams(endpoint, params) {
+            var query = [];
+            Object.keys(params || {}).forEach(function(key) {
+                if (params[key] !== '' && params[key] !== null && params[key] !== undefined) {
+                    query.push(encodeURIComponent(key) + '=' + encodeURIComponent(params[key]));
+                }
+            });
+            return endpoint + (endpoint.indexOf('?') === -1 ? '?' : '&') + query.join('&');
+        }
+
+        var modalReturnFocus = null;
+
+        function openModal(modal) {
+            if (!modal) return;
+            modalReturnFocus = document.activeElement && document.activeElement !== document.body ? document.activeElement : null;
+            modal.classList.add('is-open');
+            modal.setAttribute('aria-hidden', 'false');
+        }
+
+        function closeModals() {
+            var wasOpen = false;
+            [postModal, jsonModal].forEach(function(modal) {
+                if (!modal) return;
+                if (modal.classList.contains('is-open')) wasOpen = true;
+                modal.classList.remove('is-open');
+                modal.setAttribute('aria-hidden', 'true');
+            });
+            pickerBlock = null;
+            // 关闭后把焦点还给打开前的按钮，避免焦点掉到 body
+            if (wasOpen && modalReturnFocus && typeof modalReturnFocus.focus === 'function' && document.contains(modalReturnFocus)) {
+                modalReturnFocus.focus();
+            }
+            modalReturnFocus = null;
+        }
+
+        function activeModal() {
+            return [postModal, jsonModal].filter(function(modal) {
+                return modal && modal.classList.contains('is-open');
+            })[0] || null;
+        }
+
+        document.addEventListener('keydown', function(event) {
+            var modal = activeModal();
+            if (!modal) return;
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                closeModals();
+                return;
+            }
+            if (event.key !== 'Tab') return;
+            var focusable = $all('a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])', modal).filter(function(element) {
+                return element.offsetParent !== null;
+            });
+            if (!focusable.length) return;
+            var first = focusable[0];
+            var last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        });
+
+        function openJsonModal() {
+            if (!jsonOutput) return;
+            jsonOutput.value = JSON.stringify(currentData(), null, 2);
+            openModal(jsonModal);
+            jsonOutput.focus();
+        }
+
+        function renderPostResults(items, append) {
+            if (!append) postResults.innerHTML = '';
+            if (!items || !items.length) {
+                if (!append) {
+                    var empty = document.createElement('div');
+                    empty.className = 'qiwi-admin-empty';
+                    empty.textContent = '没有找到可选文章。';
+                    postResults.appendChild(empty);
+                }
+                return;
+            }
+
+            items.forEach(function(item) {
+                var button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'qiwi-thread-post-result';
+                button.setAttribute('data-thread-action', 'select-post');
+                button.setAttribute('data-post-cid', item.cid || '');
+                button.setAttribute('data-post-slug', item.slug || '');
+                button.setAttribute('data-post-title', item.title || '');
+                button.innerHTML =
+                    '<span><strong>' + escapeHtml(item.title || '未命名文章') + '</strong><em>' + escapeHtml(item.excerpt || item.slug || '') + '</em></span>' +
+                    '<small>#' + escapeHtml(item.cid || '') + ' · ' + escapeHtml(item.date || '') + '</small>';
+                postResults.appendChild(button);
+            });
+        }
+
+        function loadPosts(reset) {
+            if (!toolsConfig.postsEndpoint || pickerLoading) return;
+            pickerLoading = true;
+            if (reset) pickerPage = 1;
+            setStatus('正在读取文章列表...');
+
+            fetch(endpointWithParams(toolsConfig.postsEndpoint, {
+                q: pickerQuery,
+                page: pickerPage,
+                limit: 12
+            }), {
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' }
+            }).then(function(response) {
+                if (!response.ok) throw new Error('读取文章列表失败');
+                return response.json();
+            }).then(function(payload) {
+                renderPostResults(payload && payload.items ? payload.items : [], !reset);
+                pickerPage += 1;
+                setStatus('');
+            }).catch(function(error) {
+                setStatus(error && error.message ? error.message : '读取文章列表失败。', true);
+            }).then(function() {
+                pickerLoading = false;
+            });
+        }
+
+        function openPostPicker(blockRow) {
+            pickerBlock = blockRow;
+            pickerQuery = '';
+            if (postSearch) postSearch.value = '';
+            if (postResults) postResults.innerHTML = '';
+            openModal(postModal);
+            if (postSearch) postSearch.focus();
+            loadPosts(true);
+        }
+
+        function selectPostFromButton(button) {
+            if (!pickerBlock || !button) return;
+            var cid = button.getAttribute('data-post-cid') || '';
+            var slug = button.getAttribute('data-post-slug') || '';
+            var title = button.getAttribute('data-post-title') || '';
+            var cidInput = $('[data-thread-block-field="cid"]', pickerBlock);
+            var slugInput = $('[data-thread-block-field="slug"]', pickerBlock);
+            var titleInput = $('[data-thread-block-field="title"]', pickerBlock);
+            var selected = $('[data-thread-selected-title]', pickerBlock);
+            var summary = $('.qiwi-thread-block-title', pickerBlock);
+            if (cidInput) cidInput.value = cid;
+            if (slugInput) slugInput.value = slug;
+            if (titleInput) titleInput.value = title;
+            if (selected) selected.textContent = title || ('CID #' + cid);
+            if (summary) summary.textContent = title || ('CID #' + cid);
+            closeModals();
+            sync();
+        }
+
+        function loadThreadData() {
+            if (pluginDataLoaded) {
+                return;
+            }
+
+            pluginDataLoaded = true;
+            if (!toolsConfig.readEndpoint || threadMid <= 0) {
+                render(parseThreadData(description.value));
+                return;
+            }
+
+            fetch(endpointWithMid(toolsConfig.readEndpoint), {
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' }
+            }).then(function(response) {
+                if (!response.ok) throw new Error('读取 Thread 数据失败');
+                return response.json();
+            }).then(function(payload) {
+                render(parseThreadData(payload && payload.data ? payload.data : description.value));
+                setStatus(payload && payload.data ? '已从 Qiwi Theme 插件读取文集数据。' : '还没有保存过文集结构。');
+            }).catch(function() {
+                render(parseThreadData(description.value));
+                setStatus('无法读取插件数据，当前显示分类描述里的兼容内容。', true);
+            });
+        }
+
+        function saveThreadData(done) {
+            if (!isThreadSlug()) {
+                if (done) done(true);
+                return;
+            }
+
+            var data = currentData();
+            hiddenPayload.value = JSON.stringify(data, null, 2);
+            description.value = compactDescription(data);
+            setStatus('正在保存文集...');
+
+            if (!toolsConfig.saveEndpoint || threadMid <= 0) {
+                setStatus('完整文集结构会随新增分类一起保存。');
+                if (done) done(true);
+                return;
+            }
+
+            fetch(toolsConfig.saveEndpoint, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    mid: threadMid,
+                    data: JSON.stringify(data, null, 2)
+                })
+            }).then(function(response) {
+                if (!response.ok) throw new Error('保存 Thread 数据失败');
+                return response.json();
+            }).then(function(payload) {
+                if (!payload || !payload.success) throw new Error('保存 Thread 数据失败');
+                threadState = data;
+                setStatus('文集已保存。');
+                if (done) done(true);
+            }).catch(function(error) {
+                setStatus(error && error.message ? error.message : '保存 Thread 数据失败。', true);
+                if (done) done(false);
+            });
+        }
+
+        function addBlock(type) {
+            var empty = $('.qiwi-admin-empty', list);
+            if (empty) empty.remove();
+            if (type === 'text') type = 'markdown';
+            list.appendChild(renderThreadBlock({ type: type }, true));
+            sync();
+        }
+
+        function submitThreadForm() {
+            var form = description.closest('form');
+            if (form && typeof form.requestSubmit === 'function') {
+                form.requestSubmit();
+                return;
+            }
+
+            if (form) {
+                var event = document.createEvent('Event');
+                event.initEvent('submit', true, true);
+                form.dispatchEvent(event);
+                return;
+            }
+
+            saveThreadData();
+        }
+
+        panel.addEventListener('input', function(event) {
+            var row = event.target.closest('.qiwi-thread-block');
+            if (row) {
+                var title = $('.qiwi-thread-block-title', row);
+                if (title) title.textContent = threadBlockSummary(currentData().blocks[$all('.qiwi-thread-block', list).indexOf(row)]);
+            }
+            sync();
+        });
+
+        panel.addEventListener('change', sync);
+
+        panel.addEventListener('click', function(event) {
+            var add = event.target.closest('[data-thread-add]');
+            if (add) {
+                addBlock(add.getAttribute('data-thread-add'));
+                return;
+            }
+
+            var button = event.target.closest('[data-thread-action]');
+            if (!button) return;
+            var action = button.getAttribute('data-thread-action');
+            var blockRow = button.closest('.qiwi-thread-block');
+
+            if (action === 'toggle-block' && blockRow) {
+                if (event.target.closest('[data-thread-drag]')) return;
+                var isOpen = !blockRow.classList.contains('is-open');
+                blockRow.classList.toggle('is-open', isOpen);
+                button.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                return;
+            }
+
+            if (action === 'choose-post' && blockRow) {
+                openPostPicker(blockRow);
+                return;
+            }
+
+            if (action === 'select-post') {
+                selectPostFromButton(button);
+                return;
+            }
+
+            if (action === 'open-json') {
+                openJsonModal();
+                return;
+            }
+
+            if (action === 'search-posts') {
+                pickerQuery = trim(postSearch ? postSearch.value : '');
+                loadPosts(true);
+                return;
+            }
+
+            if (action === 'load-more-posts') {
+                loadPosts(false);
+                return;
+            }
+
+            if (action === 'delete' && blockRow) blockRow.remove();
+            if (action === 'up' && blockRow && blockRow.previousElementSibling) list.insertBefore(blockRow, blockRow.previousElementSibling);
+            if (action === 'down' && blockRow && blockRow.nextElementSibling) list.insertBefore(blockRow.nextElementSibling, blockRow);
+
+            if (action === 'save-json') {
+                submitThreadForm();
+                return;
+            }
+
+            if (action === 'copy-json') {
+                var json = JSON.stringify(currentData(), null, 2);
+                copyText(json, function() {
+                    setStatus('JSON 已复制。');
+                });
+                return;
+            }
+
+            sync();
+            if (!$all('.qiwi-thread-block', list).length) render(parseThreadData(description.value));
+        });
+
+        panel.addEventListener('click', function(event) {
+            if (event.target.closest('[data-thread-modal-close]')) {
+                closeModals();
+            }
+        });
+
+        if (postSearch) {
+            postSearch.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    pickerQuery = trim(postSearch.value);
+                    loadPosts(true);
+                }
+            });
+        }
+
+        list.addEventListener('dragstart', function(event) {
+            var handle = event.target.closest('[data-thread-drag]');
+            if (!handle) {
+                event.preventDefault();
+                return;
+            }
+            draggedBlock = handle.closest('.qiwi-thread-block');
+            if (!draggedBlock) return;
+            draggedBlock.classList.add('is-dragging');
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', 'thread-block');
+        });
+
+        list.addEventListener('dragover', function(event) {
+            if (!draggedBlock) return;
+            var target = event.target.closest('.qiwi-thread-block');
+            if (!target || target === draggedBlock) return;
+            event.preventDefault();
+            var rect = target.getBoundingClientRect();
+            var before = event.clientY < rect.top + rect.height / 2;
+            list.insertBefore(draggedBlock, before ? target : target.nextSibling);
+        });
+
+        list.addEventListener('drop', function(event) {
+            if (!draggedBlock) return;
+            event.preventDefault();
+            sync();
+        });
+
+        list.addEventListener('dragend', function() {
+            if (draggedBlock) draggedBlock.classList.remove('is-dragging');
+            draggedBlock = null;
+            sync();
+        });
+
+        description.addEventListener('input', function() {
+            if (!isRendering && isThreadSlug()) sync();
+        });
+        slugInput.addEventListener('input', updateVisibility);
+        if (nameInput) {
+            nameInput.addEventListener('input', function() {
+                if (!trim(slugInput.value) && /^thread-/i.test(trim(nameInput.value))) updateVisibility();
+            });
+        }
+
+        var form = description.closest('form');
+        if (form) {
+            form.addEventListener('submit', function(event) {
+                if (!isThreadSlug() || form.dataset.qiwiThreadSubmitting === '1') return;
+
+                event.preventDefault();
+                saveThreadData(function(ok) {
+                    if (!ok && threadMid > 0) return;
+                    form.dataset.qiwiThreadSubmitting = '1';
+                    form.submit();
+                });
+            });
+        }
+
+        updateVisibility();
+    }
+
+    // 邮件通知 tab：按发信方式（SMTP / Resend / mail() / sendmail()）联动显隐专属字段。
+    function initMailModeToggle(panel) {
+        var mailPane = $('[data-qiwi-pane="mail"]', panel);
+        if (!mailPane || mailPane.dataset.qiwiMailModeReady) return;
+        mailPane.dataset.qiwiMailModeReady = '1';
+
+        var groups = {
+            smtp: ['mailHost', 'mailPort', 'mailUser', 'mailPass', 'mailValidate'],
+            resend: ['mailResendApiKey', 'mailResendFrom', 'mailResendApiUrl', 'mailResendCaFile']
+        };
+
+        Object.keys(groups).forEach(function(mode) {
+            groups[mode].forEach(function(name) {
+                var row = fieldRow(fieldByName(name));
+                if (row) row.setAttribute('data-mail-mode', mode);
+            });
+        });
+
+        function update() {
+            var checked = $('input[name="mailMode"]:checked', panel) || $('input[name="mailMode"]', panel);
+            var mode = checked ? checked.value : '';
+            $all('[data-mail-mode]', mailPane).forEach(function(row) {
+                row.hidden = !!row.getAttribute('data-mail-mode') && row.getAttribute('data-mail-mode') !== mode;
+            });
+        }
+
+        $all('input[name="mailMode"]', panel).forEach(function(radio) {
+            radio.addEventListener('change', update);
+        });
+        update();
+    }
+
+    // 站点地图 / 邮件通知 tab：旧伴生插件残留或 QiwiTheme 合并模块未注册时给出提示。
+    // 两类模块的问题分别提示在各自的 tab，旧插件残留两边都提示。
+    function initCompanionWarnings(panel) {
+        var status = window.QIWI_ADMIN_CONFIG && window.QIWI_ADMIN_CONFIG.companionStatus;
+        if (!status) return;
+
+        var legacyIssue = '';
+        if (status.legacyPluginsActive && status.legacyPluginsActive.length) {
+            legacyIssue = '检测到旧伴生插件 ' + status.legacyPluginsActive.join('、') + ' 仍处于启用状态，它们的功能已并入 QiwiTheme。请停用这些旧插件，并停用后重新启用一次 QiwiTheme 以完成配置迁移。';
+        }
+
+        var tabIssues = {
+            sitemap: legacyIssue,
+            mail: legacyIssue,
+            thoughts: legacyIssue
+        };
+        if (!status.sitemapRouteActive) {
+            tabIssues.sitemap += ' 站点地图 / robots.txt 路由尚未注册：请到后台「插件」页停用再启用一次 QiwiTheme。';
+        }
+        if (!status.mailHookActive) {
+            tabIssues.mail += ' 评论邮件钩子尚未注册：请到后台「插件」页停用再启用一次 QiwiTheme。';
+        }
+
+        Object.keys(tabIssues).forEach(function(key) {
+            var text = trim(tabIssues[key]);
+            if (!text) return;
+            var slot = $('[data-qiwi-companion-warning="' + key + '"]', panel);
+            if (!slot) return;
+            var warning = document.createElement('div');
+            warning.className = 'qiwi-category-visibility-warning';
+            warning.innerHTML =
+                '<strong>QiwiTheme 伴生模块需要重新激活</strong>' +
+                '<span>' + escapeHtml(text) + '</span>';
+            slot.appendChild(warning);
+        });
+    }
+
+    function init() {
+        initThreadCategoryEditor();
+
+        var navTextarea = fieldByName('navItems');
+        var friendsTextarea = fieldByName('friendsData');
+        var bookInput = fieldByName('bookReference');
+        if (!navTextarea || !friendsTextarea || !bookInput || $('.qiwi-admin-panel')) return;
+
+        var navRow = fieldRow(navTextarea);
+        if (!navRow) return;
+
+        document.body.classList.add('qiwi-admin-config-page');
+        var mainColumn = navRow.closest('.col-mb-12');
+        if (mainColumn) {
+            mainColumn.classList.remove('col-tb-8', 'col-tb-offset-2');
+            mainColumn.classList.add('col-tb-12', 'qiwi-admin-config-column');
+        }
+
+        var panel = document.createElement('div');
+        panel.className = 'qiwi-admin-panel';
+        panel.innerHTML =
+            '<div class="qiwi-admin-shell">' +
+                '<aside class="qiwi-admin-sidebar" aria-label="Qiwi 设置导航">' +
+                    '<div class="qiwi-admin-brand">' +
+                        '<span class="qiwi-admin-brand-mark"><i class="fa-solid fa-seedling" aria-hidden="true"></i></span>' +
+                        '<span><strong>Qiwi 设置</strong><em>v' + escapeHtml(getAdminConfig().currentVersion || 'unknown') + ' 工作台</em></span>' +
+                    '</div>' +
+                    '<nav class="qiwi-admin-tabs" role="tablist">' +
+                        '<div class="qiwi-admin-nav-group">' +
+                            '<span class="qiwi-admin-nav-label">内容呈现</span>' +
+                            '<button type="button" class="qiwi-admin-tab is-active" data-qiwi-tab="nav" data-qiwi-title="导航栏" data-qiwi-desc="顶部导航、外链与二级菜单。"><i class="fa-solid fa-compass" aria-hidden="true"></i><span>导航栏</span></button>' +
+                            '<button type="button" class="qiwi-admin-tab" data-qiwi-tab="templates" data-qiwi-title="页面模板" data-qiwi-desc="常用独立页面正文模板，可一键复制到页面正文。"><i class="fa-regular fa-copy" aria-hidden="true"></i><span>页面模板</span></button>' +
+                        '</div>' +
+                        '<div class="qiwi-admin-nav-group">' +
+                            '<span class="qiwi-admin-nav-label">页面数据</span>' +
+                            '<button type="button" class="qiwi-admin-tab" data-qiwi-tab="site" data-qiwi-title="网站信息" data-qiwi-desc="站点脚本、页脚与默认版权信息。"><i class="fa-solid fa-sliders" aria-hidden="true"></i><span>网站信息</span></button>' +
+                            '<button type="button" class="qiwi-admin-tab" data-qiwi-tab="about" data-qiwi-title="关于页面" data-qiwi-desc="关于页头像与个人简介。"><i class="fa-regular fa-address-card" aria-hidden="true"></i><span>关于页面</span></button>' +
+                            '<button type="button" class="qiwi-admin-tab" data-qiwi-tab="friends" data-qiwi-title="友链" data-qiwi-desc="友链分类、站点资料与排序。"><i class="fa-solid fa-link" aria-hidden="true"></i><span>友链</span></button>' +
+                            '<button type="button" class="qiwi-admin-tab" data-qiwi-tab="books" data-qiwi-title="归档" data-qiwi-desc="归档页书籍统计与字数数据。"><i class="fa-solid fa-box-archive" aria-hidden="true"></i><span>归档</span></button>' +
+                        '</div>' +
+                        '<div class="qiwi-admin-nav-group">' +
+                            '<span class="qiwi-admin-nav-label">运维</span>' +
+                            '<button type="button" class="qiwi-admin-tab" data-qiwi-tab="links" data-qiwi-title="外链统计" data-qiwi-desc="伴生插件记录的外链点击数据。"><i class="fa-solid fa-chart-line" aria-hidden="true"></i><span>外链统计</span></button>' +
+                            '<button type="button" class="qiwi-admin-tab" data-qiwi-tab="ip-location" data-qiwi-title="IP 归属地" data-qiwi-desc="评论 IP 归属地缓存写入。"><i class="fa-solid fa-location-dot" aria-hidden="true"></i><span>IP 归属地</span></button>' +
+                            '<button type="button" class="qiwi-admin-tab" data-qiwi-tab="likes" data-qiwi-title="点赞记录" data-qiwi-desc="说说和文章点赞身份、邮箱 hash 与评论匹配。"><i class="fa-regular fa-heart" aria-hidden="true"></i><span>点赞记录</span></button>' +
+                            '<button type="button" class="qiwi-admin-tab" data-qiwi-tab="post-likes" data-qiwi-title="文章点赞" data-qiwi-desc="按文章查看点赞数量和最近点赞时间。"><i class="fa-solid fa-heart-circle-check" aria-hidden="true"></i><span>文章点赞</span></button>' +
+                            '<button type="button" class="qiwi-admin-tab" data-qiwi-tab="security" data-qiwi-title="后台与安全" data-qiwi-desc="版本提示、验证码与后台开关。"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i><span>后台与安全</span></button>' +
+                            '<button type="button" class="qiwi-admin-tab" data-qiwi-tab="sitemap" data-qiwi-title="站点地图 / 订源" data-qiwi-desc="sitemap、robots.txt、时光机 RSS 与订阅增强，由 QiwiTheme 插件提供。"><i class="fa-solid fa-sitemap" aria-hidden="true"></i><span>站点地图 / 订源</span></button>' +
+                            '<button type="button" class="qiwi-admin-tab" data-qiwi-tab="mail" data-qiwi-title="邮件通知" data-qiwi-desc="评论邮件通知的发信方式、模板与队列，由 QiwiTheme 插件提供。"><i class="fa-regular fa-envelope" aria-hidden="true"></i><span>邮件通知</span></button>' +
+                            '<button type="button" class="qiwi-admin-tab" data-qiwi-tab="thoughts" data-qiwi-title="想法批注" data-qiwi-desc="正文段落想法的功能开关、限额与审核通知，由 QiwiTheme 插件提供。"><i class="fa-solid fa-highlighter" aria-hidden="true"></i><span>想法批注</span></button>' +
+                            '<button type="button" class="qiwi-admin-tab" data-qiwi-tab="raw" data-qiwi-title="原始数据" data-qiwi-desc="结构化编辑器背后的兼容数据。"><i class="fa-solid fa-code" aria-hidden="true"></i><span>原始数据</span></button>' +
+                        '</div>' +
+                    '</nav>' +
+                '</aside>' +
+                '<main class="qiwi-admin-main">' +
+                    '<header class="qiwi-admin-main-head">' +
+                        '<div><strong data-qiwi-current-title>导航栏</strong><span data-qiwi-current-desc></span></div>' +
+                        '<div class="qiwi-admin-head-actions"><button type="button" class="qiwi-admin-button is-primary qiwi-admin-save-button" data-qiwi-save-trigger><i class="fa-regular fa-circle-check" aria-hidden="true"></i>保存设置</button></div>' +
+                    '</header>' +
+                    '<section class="qiwi-admin-pane is-active" data-qiwi-pane="nav">' +
+                        '<div class="qiwi-admin-fields" data-qiwi-nav-fields></div>' +
+                        '<div class="qiwi-admin-toolbar">' +
+                            '<button type="button" class="qiwi-admin-button" data-nav-add="parent"><i class="fa-solid fa-plus" aria-hidden="true"></i>添加主导航</button>' +
+                            '<button type="button" class="qiwi-admin-button" data-nav-add="child"><i class="fa-solid fa-turn-down" aria-hidden="true"></i>添加子菜单</button>' +
+                        '</div>' +
+                        '<div data-qiwi-nav-list></div>' +
+                    '</section>' +
+                    '<section class="qiwi-admin-pane" data-qiwi-pane="templates">' +
+                        '<div class="qiwi-admin-toolbar">' +
+                            '<button type="button" class="qiwi-admin-button is-primary" data-plog-template-copy><i class="fa-regular fa-copy" aria-hidden="true"></i>一键复制模板</button>' +
+                        '</div>' +
+                        '<div class="qiwi-plog-template-card">' +
+                            '<div class="qiwi-plog-template-head">' +
+                                '<strong>Plog 页面正文模板</strong>' +
+                                '<span>把下面内容粘到独立页面正文里，再在页面设置中选择 `page-plog.php` 模板。</span>' +
+                            '</div>' +
+                            '<pre class="qiwi-plog-template-code"><code data-plog-template-code># Plog\n用照片记录生活的碎片\nmode: masonry\nsort: date-desc\ndateDisplay: show\ndatePrecision: auto\n\n![玄武湖畔](https://example.com/photo-01.jpg)\ntitle: 玄武湖畔\ndesc: 傍晚沿湖跑步时拍的，光线刚好\nalbum: 南京游\ndate: 1781524213\nw: 4\nh: 3\n\n![先锋书店](https://example.com/photo-02.jpg)\ntitle: 先锋书店\ndesc: 地下停车场改造的书店，很有氛围\nalbum: 南京游\ndate: 2026-06-15 19:50\ndatePrecision: datetime\nw: 16\nh: 9</code></pre>' +
+                        '</div>' +
+                    '</section>' +
+                    '<section class="qiwi-admin-pane" data-qiwi-pane="site"><div class="qiwi-admin-fields" data-qiwi-site-fields></div>' +
+                        '<section class="qiwi-category-visibility-editor" data-qiwi-category-visibility-editor>' +
+                            '<div class="qiwi-category-visibility-head"><strong>分类展示</strong><span>分别控制每个分类是否出现在首页和整站 RSS。文章自己的设置优先于这里。</span></div>' +
+                            '<div class="qiwi-category-visibility-columns"><span>分类</span><span>首页</span><span>RSS</span></div>' +
+                            '<div data-qiwi-category-visibility-list></div>' +
+                        '</section>' +
+                    '</section>' +
+                    '<section class="qiwi-admin-pane" data-qiwi-pane="about"><div class="qiwi-admin-fields" data-qiwi-about-fields></div></section>' +
+                    '<section class="qiwi-admin-pane" data-qiwi-pane="friends">' +
+                        '<div class="qiwi-friends-admin-tabs" data-qiwi-friends-admin-tabs>' +
+                            '<div class="qiwi-friends-admin-tab-list" role="tablist" aria-label="友链管理">' +
+                                '<button type="button" class="qiwi-friends-admin-tab is-active" data-friends-admin-tab="links" role="tab" aria-selected="true"><i class="fa-solid fa-link" aria-hidden="true"></i><span>友链</span></button>' +
+                                '<button type="button" class="qiwi-friends-admin-tab" data-friends-admin-tab="rss" role="tab" aria-selected="false"><i class="fa-solid fa-rss" aria-hidden="true"></i><span>RSS 动态</span></button>' +
+                            '</div>' +
+                            '<section class="qiwi-friends-admin-panel is-active" data-friends-admin-panel="links">' +
+                                '<div class="qiwi-admin-toolbar">' +
+                                    '<button type="button" class="qiwi-admin-button" data-friend-action="add-category"><i class="fa-solid fa-folder-plus" aria-hidden="true"></i>添加分类</button>' +
+                                '</div>' +
+                                '<div data-qiwi-friends-list></div>' +
+                            '</section>' +
+                            '<section class="qiwi-friends-admin-panel" data-friends-admin-panel="rss" hidden>' +
+                                '<section class="qiwi-friend-feed-panel" data-qiwi-friend-feed>' +
+                                    '<div class="qiwi-friend-feed-head">' +
+                                        '<strong>朋友圈 RSS</strong>' +
+                                        '<span>主题保存连接信息；远端配置和 RSS 源会直接写入 QiwiRss 服务。</span>' +
+                                    '</div>' +
+                                    '<div class="qiwi-admin-fields qiwi-friend-feed-local" data-qiwi-friend-feed-fields></div>' +
+                                    '<div class="qiwi-admin-toolbar qiwi-friend-feed-actions">' +
+                                        '<button type="button" class="qiwi-admin-button" data-friend-feed-check><i class="fa-solid fa-plug-circle-check" aria-hidden="true"></i>检查连接</button>' +
+                                        '<button type="button" class="qiwi-admin-button" data-friend-feed-refresh><i class="fa-solid fa-rotate" aria-hidden="true"></i>刷新 RSS 源</button>' +
+                                        '<button type="button" class="qiwi-admin-button" data-friend-feed-fetch-all><i class="fa-solid fa-cloud-arrow-down" aria-hidden="true"></i>抓取全部</button>' +
+                                        '<button type="button" class="qiwi-admin-button is-primary" data-friend-feed-save><i class="fa-regular fa-circle-check" aria-hidden="true"></i>保存远端配置</button>' +
+                                    '</div>' +
+                                    '<p class="qiwi-friend-feed-status" data-friend-feed-status></p>' +
+                                    '<div class="qiwi-friend-feed-summary" data-friend-feed-summary></div>' +
+                                    '<div class="qiwi-friend-feed-remote" data-friend-feed-remote><p class="qiwi-friend-feed-empty">填写 Base URL 后可以检查连接。</p></div>' +
+                                    '<section class="qiwi-friend-feed-create">' +
+                                        '<div class="qiwi-friend-feed-create-head">' +
+                                            '<strong>添加 RSS 源</strong>' +
+                                            '<span>可以先从站点发现 RSS/Atom 地址，再保存到 QiwiRss。</span>' +
+                                        '</div>' +
+                                        '<div class="qiwi-friend-feed-discover">' +
+                                            '<input type="url" data-rss-discover-url placeholder="https://example.com">' +
+                                            '<button type="button" class="qiwi-admin-button" data-rss-action="discover"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>发现</button>' +
+                                        '</div>' +
+                                        '<div class="qiwi-friend-feed-editor" data-rss-new-form>' +
+                                            '<label>标题<input type="text" data-rss-feed-field="title"></label>' +
+                                            '<label>站点 URL<input type="url" data-rss-feed-field="site_url"></label>' +
+                                            '<label>RSS URL<input type="url" data-rss-feed-field="feed_url"></label>' +
+                                            '<label>头像 URL<input type="url" data-rss-feed-field="avatar_url"></label>' +
+                                            '<label>抓取间隔（分钟）<input type="number" min="1" step="1" data-rss-feed-field="fetch_interval_minutes" value="60"></label>' +
+                                            '<label>启用<select data-rss-feed-field="enabled"><option value="true" selected>启用</option><option value="false">关闭</option></select></label>' +
+                                            '<label class="qiwi-friend-feed-wide">描述<textarea rows="2" data-rss-feed-field="description"></textarea></label>' +
+                                        '</div>' +
+                                        '<div class="qiwi-admin-toolbar qiwi-friend-feed-actions"><button type="button" class="qiwi-admin-button is-primary" data-rss-action="create"><i class="fa-solid fa-plus" aria-hidden="true"></i>添加 RSS 源</button></div>' +
+                                    '</section>' +
+                                    '<div class="qiwi-friend-feed-list" data-rss-feed-list><p class="qiwi-friend-feed-empty">连接后会显示 RSS 源。</p></div>' +
+                                    '<div class="qiwi-friend-feed-logs" data-rss-fetch-logs></div>' +
+                                '</section>' +
+                            '</section>' +
+                        '</div>' +
+                    '</section>' +
+                    '<section class="qiwi-admin-pane" data-qiwi-pane="books">' +
+                        '<div class="qiwi-admin-toolbar">' +
+                            '<button type="button" class="qiwi-admin-button" data-book-action="add"><i class="fa-solid fa-plus" aria-hidden="true"></i>添加书籍</button>' +
+                        '</div>' +
+                        '<div data-qiwi-book-list></div>' +
+                    '</section>' +
+                    '<section class="qiwi-admin-pane" data-qiwi-pane="links"><div class="qiwi-link-stats" data-qiwi-external-stats></div></section>' +
+                    '<section class="qiwi-admin-pane" data-qiwi-pane="ip-location"><div class="qiwi-link-stats" data-qiwi-ip-location-tools></div></section>' +
+                    '<section class="qiwi-admin-pane" data-qiwi-pane="likes"><div class="qiwi-link-stats qiwi-like-records" data-qiwi-like-records></div></section>' +
+                    '<section class="qiwi-admin-pane" data-qiwi-pane="post-likes"><div class="qiwi-link-stats qiwi-like-records" data-qiwi-post-like-stats></div></section>' +
+                    '<section class="qiwi-admin-pane" data-qiwi-pane="security"><div data-qiwi-update-panel></div><div class="qiwi-admin-fields" data-qiwi-security-fields></div></section>' +
+                    '<section class="qiwi-admin-pane" data-qiwi-pane="sitemap"><div data-qiwi-companion-warning="sitemap"></div><div class="qiwi-admin-fields" data-qiwi-sitemap-fields></div></section>' +
+                    '<section class="qiwi-admin-pane" data-qiwi-pane="mail"><div data-qiwi-companion-warning="mail"></div><div class="qiwi-admin-fields" data-qiwi-mail-fields></div></section>' +
+                    '<section class="qiwi-admin-pane" data-qiwi-pane="thoughts"><div data-qiwi-companion-warning="thoughts"></div><div class="qiwi-admin-fields" data-qiwi-thoughts-fields></div></section>' +
+                    '<section class="qiwi-admin-pane" data-qiwi-pane="raw"></section>' +
+                '</main>' +
+            '</div>';
+
+        navRow.parentNode.insertBefore(panel, navRow);
+
+        moveFields(['logoUrl', 'sidebarProfileAvatar', 'v2EnglishTitle', 'v2SidebarSlogan', 'homeNavTitle', 'enableTravellings'], $('[data-qiwi-nav-fields]', panel));
+        moveFields(['sidebarMomentCount', 'homeVisibilityDefault', 'rssVisibilityDefault', 'v2FooterMotto', 'footerInfo', 'defaultCopyrightLicense', 'defaultCopyrightInfo', 'postSupportEnabled', 'postSupportQrUrl', 'postSupportTopText', 'postSupportBottomText', 'enableBusuanzi', 'umamiApiBase', 'umamiShareId', 'obsidianPushToken', 'customCSS', 'customJS', 'trackingCode'], $('[data-qiwi-site-fields]', panel));
+        moveFields(['aboutBio', 'aboutAvatar'], $('[data-qiwi-about-fields]', panel));
+        moveFields(['friendFeedEnabled', 'friendFeedBaseUrl', 'friendFeedAdminToken', 'friendFeedLimit'], $('[data-qiwi-friend-feed-fields]', panel));
+        moveFields(['showUpdateLog', 'showVersionDrawer', 'enabledCaptcha'], $('[data-qiwi-security-fields]', panel));
+        moveFields(['enableSitemap', 'enablePosts', 'enablePages', 'enableCategories', 'enableTags', 'enableXsl', 'enableRobots', 'enableMomentsFeed', 'momentsPageCid', 'momentsFeedLimit', 'enableFeedDiscovery', 'enableFeedShortcodeCompat', 'enableFeedAvatar', 'avatarUrl', 'excludedCids'], $('[data-qiwi-sitemap-fields]', panel));
+        moveFields(['mailMode', 'mailHost', 'mailPort', 'mailUser', 'mailPass', 'mailValidate', 'mailResendApiKey', 'mailResendFrom', 'mailResendApiUrl', 'mailResendCaFile', 'mailFromName', 'mailRecipient', 'mailContactme', 'mailTitleForOwner', 'mailTitleForGuest', 'mailNotifyStatus', 'mailSwitches', 'mailBatchSize', 'mailRateLimitPerSecond', 'mailMaxAttempts', 'mailLogKeepDays', 'mailQueueKey'], $('[data-qiwi-mail-fields]', panel));
+        moveFields(['thoughtsEnabled', 'thoughtsMaxLength', 'thoughtsMinSelection', 'thoughtsMaxSelection', 'thoughtsSubmitInterval', 'thoughtsPendingLimit', 'thoughtsMailNotify'], $('[data-qiwi-thoughts-fields]', panel));
+
+        var rawPane = $('[data-qiwi-pane="raw"]', panel);
+        [
+            ['navItems', '顶部导航配置'],
+            ['friendsData', '友链数据'],
+            ['bookReference', '归档统计数据'],
+            ['categoryVisibilityData', '分类展示设置'],
+            ['mailOwnerTemplate', '管理员通知邮件模板'],
+            ['mailGuestTemplate', '用户回复通知邮件模板']
+        ].forEach(function(item) {
+            var row = moveField(item[0], rawPane);
+            wrapRawField(row, item[1]);
+        });
+
+        initTabs(panel);
+        initFriendAdminTabs(panel);
+        initAdminSaveButton(panel);
+        initPlogTemplatePanel(panel);
+        var editors = {
+            nav: initNavEditor(panel, navTextarea),
+            friends: initFriendsEditor(panel, friendsTextarea),
+            books: initBookEditor(panel, bookInput),
+            categoryVisibility: initCategoryVisibilityEditor(panel, fieldByName('categoryVisibilityData'))
+        };
+        initExternalLinkStats(panel);
+        initFriendFeedPanel(panel);
+        initIpLocationTools(panel);
+        initLikeRecords(panel);
+        initUpdatePanel($('[data-qiwi-update-panel]', panel));
+        initConfigImportExport(rawPane, editors);
+        applyRecommendedDefaults();
+        initMailModeToggle(panel);
+        initCompanionWarnings(panel);
+        enhanceSpecialTextareas();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();

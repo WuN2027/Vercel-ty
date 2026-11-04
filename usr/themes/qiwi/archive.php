@@ -1,0 +1,100 @@
+<?php
+/**
+ * 归档/分类/标签页
+ */
+if (!defined('__TYPECHO_ROOT_DIR__')) exit;
+$this->need('header.php');
+
+$qiwiArchiveSlug = method_exists($this, 'getArchiveSlug') ? (string) $this->getArchiveSlug() : '';
+$qiwiIsThreadArchive = $this->is('category') && function_exists('qiwiIsThreadSlug') && qiwiIsThreadSlug($qiwiArchiveSlug);
+if ($qiwiIsThreadArchive) {
+    $this->need('components/thread-archive.php');
+    $this->need('footer.php');
+    return;
+}
+$qiwiCategoryPresentation = array();
+if ($this->is('category') && function_exists('qiwiGetCategoryMetaBySlug') && function_exists('qiwiParseCategoryDescription')) {
+    $qiwiCategoryMeta = qiwiGetCategoryMetaBySlug($qiwiArchiveSlug);
+    if (!empty($qiwiCategoryMeta)) {
+        $qiwiCategoryPresentation = qiwiParseCategoryDescription(isset($qiwiCategoryMeta['description']) ? $qiwiCategoryMeta['description'] : '');
+        $qiwiCategoryPresentation['title'] = $qiwiCategoryPresentation['title'] !== ''
+            ? $qiwiCategoryPresentation['title']
+            : (isset($qiwiCategoryMeta['name']) ? (string) $qiwiCategoryMeta['name'] : $qiwiArchiveSlug);
+    }
+}
+?>
+
+<div class="main-layout">
+    <!-- 左侧留白 -->
+    <div class="layout-spacer-left"></div>
+
+    <!-- 主要内容 -->
+    <div class="main-content">
+        <header class="archive-header">
+            <h1 class="archive-title<?php echo !empty($qiwiCategoryPresentation['color']) ? ' qiwi-category-title-' . htmlspecialchars($qiwiCategoryPresentation['color'], ENT_QUOTES, 'UTF-8') : ''; ?>">
+                <?php if (!empty($qiwiCategoryPresentation['hasMeta'])): ?>
+                    <?php if ($qiwiCategoryPresentation['label'] !== ''): ?>
+                        <span class="qiwi-category-title-label"><?php echo htmlspecialchars($qiwiCategoryPresentation['label'], ENT_QUOTES, 'UTF-8'); ?>:</span>
+                    <?php endif; ?>
+                    <?php if ($qiwiCategoryPresentation['icon'] !== ''): ?>
+                        <i class="fa-solid fa-<?php echo htmlspecialchars($qiwiCategoryPresentation['icon'], ENT_QUOTES, 'UTF-8'); ?> qiwi-category-title-icon" aria-hidden="true"></i>
+                    <?php endif; ?>
+                    <?php echo htmlspecialchars($qiwiCategoryPresentation['title'], ENT_QUOTES, 'UTF-8'); ?>
+                <?php else: ?>
+                    <?php $this->archiveTitle([
+                        'category' => '分类: %s',
+                        'search'   => '搜索: %s',
+                        'tag'      => '标签: %s',
+                        'author'   => '作者: %s'
+                    ], '', ''); ?>
+                <?php endif; ?>
+            </h1>
+        </header>
+
+        <?php if ($this->have()): ?>
+        <?php
+        $archivePosts = array();
+        $archivePostCids = array();
+        while ($this->next()) {
+            $archivePosts[] = clone $this;
+            $archivePostCids[] = (int) $this->cid;
+        }
+        if (function_exists('qiwiPrimePostStatsCache')) {
+            qiwiPrimePostStatsCache($archivePostCids);
+        }
+        ?>
+        <ul class="article-list">
+            <?php foreach ($archivePosts as $archivePost): ?>
+                <?php foreach (get_object_vars($archivePost) as $key => $value) { $this->$key = $value; } ?>
+                <?php $this->need('post-card.php'); ?>
+            <?php endforeach; ?>
+        </ul>
+
+        <!-- 分页导航 -->
+        <?php if ($this->getTotal() > $this->parameter->pageSize): ?>
+        <div class="pagination-wrapper">
+            <?php $this->pageNav('« 上一页', '下一页 »', 3, '...', [
+                'wrapTag' => 'nav',
+                'wrapClass' => 'page-navigator',
+                'itemTag' => '',
+                'textTag' => 'span',
+                'currentClass' => 'current',
+                'prevClass' => 'prev',
+                'nextClass' => 'next'
+            ]); ?>
+        </div>
+        <?php endif; ?>
+
+        <?php else: ?>
+        <div class="empty-posts">
+            <h2>没有找到内容</h2>
+            <p>抱歉，没有找到符合条件的内容。</p>
+        </div>
+        <?php endif; ?>
+    </div>
+
+    <!-- 右侧留白 -->
+    <div class="layout-spacer-right"></div>
+</div>
+
+<?php $this->need('footer.php'); ?>

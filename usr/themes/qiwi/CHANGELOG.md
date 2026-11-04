@@ -1,0 +1,492 @@
+# Qiwi Theme Changelog
+
+## [2.4.3] - 2026-10-28
+- 修复移动端人机验证遮挡评论按钮的问题：Qiwi CAP 验证胶囊此前以固定宽度渲染，窄屏时会盖住说说回复表单的提交/取消按钮；现在验证码在窄屏独占一行并随表单宽度收缩，桌面端外观不变。
+- 文章评论底部工具栏在窄屏同样让验证码独占一行：此前验证码与表情、身份、发送按钮挤在同一行，嵌套回复时表单更窄，验证码会被压得只剩边角；现在这些按钮移到下一行，完整可用。
+- 后台登录页验证码同步支持窄屏收缩，小屏设备上不再被固定宽度撑破。
+
+## [2.4.2] - 2026-10-19
+- 说说评论改为朋友圈式排版：去掉头像与层层缩进，所有回复平铺成一列并按时间先后排列，回复关系以「A 回复 B：」标出，点击整行即可回复该评论，时间与地点在桌面端悬停时浮现于评论右下角、不再占用一行；评论默认两行内显示（多段落拼成一行），超出时在第二行末尾显示「…展开」，评论中的图片以小缩略图呈现，点击查看大图；点赞记录中留了称呼的访客会在评论框顶部按点赞先后列出名字，其余显示为「和 N 位游客」，点赞或取消后即时刷新；需要同步更新 `QiwiTheme` 伴生插件。
+- 灯箱修复长图、竖图显示不全的问题：图片现在按屏幕尺寸完整显示；桌面端在原图大于屏幕时指针变为放大镜，点击图片按原始尺寸放大（以点击处为中心），放大后可按住拖动查看，再点一下恢复，点击图片以外区域或按 `Esc` 关闭。
+- 所有可点开大图的图片在悬停时轻微压暗并显示手型指针，提示可点击；表情与博主徽标不受影响。
+- 说说正文与评论的「展开 / 收起」统一为平滑的高度过渡，收起时不再在动画结束后突然塌陷。
+
+## [2.4.1] - 2026-10-18
+- 正文图片按真实比例预留空间：`QiwiTheme` 会为每张正文图片记录原始宽高（访客浏览器首次加载成功后自动回传，服务端也会在页面输出后自动抓取图片头部补齐），渲染时为图片注入宽高属性，图片加载完成后不再把下方内容顶下去；作者手写过宽高的图片不受影响，需要启用 `QiwiTheme` 伴生插件。
+
+## [2.4.0] - 2026-10-17
+- 视觉焕新：移除页面网格背景，整体换为暖灰纯色底（浅色 `#f6f5f2` / 深色 `#1c1b19`）；右侧阅读区放入一张白色卡片，正文列随之加宽，长文阅读更清爽；里程页的写作热区与读者来访热力图随卡片宽度等分拉伸（右缘留出月度标签余量），空间不足时仍可横向滚动。
+- 侧栏布局调整：头像与博客名称移到侧栏顶部（slogan 一并上移），下方紧跟导航；导航间距收紧约一半，当前项高亮改为圆角胶囊。
+- 灯箱重做：新增相册式前后切换（左右按钮、键盘方向键、触摸滑动），单图时自动隐藏切换按钮；移除右上角关闭按钮与点击放大 / 飞入动画，改为干净的淡入淡出居中预览，点击任意处或 `Esc` 关闭；开关灯箱时按滚动条宽度补偿正文，缓解页面横向晃动。
+- 评论列表恢复子评论缩进：子评论对齐父评论正文列、头像略小，更深层不再叠加缩进，移动端自动收窄。
+- 正文图片懒加载：视口外的图片不再随页面一次性加载，滚动临近时才拉取并淡入；无 JavaScript 环境下图片仍正常显示（感谢 Mr.He 的设计与灵感分享）。
+
+## [2.3.1] - 2026-10-13
+- 修复说说 RSS（`timemachine.xml`）输出涂黑内容原文的问题：此前使用 `||涂黑||` 标记隐藏的内容会随说说 RSS 的标题与正文原样输出，订阅者可直接看到；现在统一替换为占位符，隐藏内容只保留在站点页面内，随 `QiwiTheme` 伴生插件一并更新即可生效。
+
+## [2.3.0] - 2026-10-01
+- 新增文章「段落想法」：读者在正文框选一段文字即可就地写下想法（类似微信读书的段落评论），提交后该段文字显示虚线标记，审核通过后对所有人可见，点击标记可查看并追加同一处的想法；待审核想法仅提交者自己可见（更浅的虚线），支持草稿本地暂存防误关丢失、表情包与评论区身份复用，移动端按段落数限制选区；不喜欢的读者可在文章顶部阅读设置中一键关闭「想法」并跨访问保持生效；需要 `QiwiTheme` 伴生插件启用。
+- QiwiTheme 新增「Qiwi 想法审核」后台面板，待审想法的引文、内容与来源一目了然，可一键通过或删除；所有想法展示前均需人工审核，配合提交频控、单篇待审上限、选区长度与重叠校验、QiwiCap 验证码（管理员豁免并直接发布）防刷；主题设置新增「想法批注」页签（功能开关、字数与选区限额、提交间隔、待审上限、待审邮件通知），单篇文章可在编辑页通过 `thoughtsDisplay` 字段单独覆盖开关；有新想法待审时可复用现有邮件队列通知博主，文章头部也会显示想法计数。
+- 段落想法的访客身份与评论区完全对齐：邮箱改为必填（用于头像与身份展示）；已保存过身份的访客在想法浮窗中折叠为一行「以某某的身份发布」摘要，点「修改」即可展开，称呼或邮箱缺失、格式不对时提交会自动展开字段并给出提示；管理员提交时自动使用登录账号的昵称与邮箱。
+- 表情包选择面板（评论区、时光机回复、段落想法）不再展示本地微信表情包，选择面板只保留其余可用的表情包；历史内容中的微信表情仍正常渲染。
+- 想法浮窗排版与动效：验证码独占一行、发布按钮改为带文字的胶囊按钮、浮窗内容超高时整体滚动、表情面板改为覆盖在想法表单上层展开不再被浮窗边缘裁切；浮窗开合与身份折叠加入轻量动效（跟随锚点方向淡入浮起），提交成功后正文标记轻闪一次、新想法在列表中高亮显示；头像加载失败时回退为首字母圆点，早期未存邮箱的站长想法按登录账号补齐头像。
+- 想法中的表情短代码在提交返回与「Qiwi 想法审核」后台面板中改为直接渲染为表情图片，不再先显示文字代码直到刷新；提交链路对换行符归一化，跨段落选区不再因换行差异导致选区校验失败。
+
+## [2.2.2] - 2026-09-22
+- 修复清除浏览器保存的个人信息后，评论区「身份」面板中称呼与邮箱输入框没有任何文字说明的问题：此前这两个框靠自动填入的昵称 / 邮箱作提示，清空后只剩空白框，现在空框内会显示「称呼 *」「Email *」占位文字，网站框的 `https://` 提示保持不变。
+
+## [2.2.1] - 2026-09-13
+- 归档页（里程）热力图新增「日 / 周 / 累计」三档视图：口径胶囊旁新增一枚视图胶囊循环切换，周视图把一根 7 格的周条当柱状图自底向上按量填充，累计视图呈阶梯增长，一眼看出哪个周期涨得最快。
+- 柱高按 7 档整格量化（相对当前口径/视图的最大值），柱子越高颜色越亮；柱状视图下左侧轨道换成 0–100 刻度，不再留空。
+- 写作板块在「全部」口径下柱内按文章 / 说说 / 随笔占比三色堆叠，切换口径后柱子按所选来源重新聚合着色。
+- 来访记录热力图口径改为「全部 / 访客 / 浏览」三档，日 / 周 / 累计视图下均可切换：日视图按所选口径纯色分档，周 / 累计视图下全部口径为双色堆叠柱（下段亮绿访客、上段深绿浏览），单一口径为纯色柱；悬停查看具体数值，异步数据刷新同步生效。
+
+## [2.2.0] - 2026-09-13
+- 伴生插件整合：`QiwiSitemap` 与 `QiwiCommentMail` 并入 `QiwiTheme` 伴生插件，站点地图 / robots.txt / 时光机 RSS 与评论邮件通知全部由 QiwiTheme 提供，安装与更新只需维护一个伴生插件。
+- 两个并入模块的设置统一收进主题设置页新增的「站点地图 / 订源」「邮件通知」页签，插件不再有独立配置页；主题配置不受插件停用影响，停用再启用也不会丢失设置。
+- 主题设置整包导出不再包含 SMTP 密码与 Resend API Key，导入时同样跳过并提示，密钥只保存在本站。
+- 升级说明：更新后请到后台「插件」页停用 `QiwiSitemap`、`QiwiCommentMail`（若仍在列表中），再停用并重新启用一次 `QiwiTheme`；激活时会自动把旧插件配置导入主题设置并注销旧插件，邮件队列表、排队中的任务与外部定时任务地址保持不变。
+- 归档页（里程）新增「写作热区」日历热力图：最近一年按周排列，文章与说说合并统计，琥珀色标记有文章的日子、青色标记仅说说的日子，悬停可查看当日明细。
+- 新增可选「读者来访」热力图：在主题设置填写自建 Umami 地址与分享 ID 后，展示过去一年每日到访热力、独立读者、浏览总量与文章累计阅读次数；数据由服务端拉取并缓存 6 小时，未配置或失败时自动隐藏，需要 QiwiTheme 插件启用。
+- 主题设置新增「Umami 统计地址」「Umami 分享 ID」两项配置，纳入整包导入导出。
+- 里程页「写作经历」新增 Obsidian 随笔层：在主题设置填写推送令牌后，`tools/obsidian-sync` 采集脚本可把「当天新建笔记数」推进热力图（紫色第三色、五档口径切换）；服务端 merge 语义防误覆盖，只接收日期与篇数聚合，不涉及任何笔记内容。
+
+## [2.1.5] - 2026-09-12
+- 高亮标记 `==文字==` 改为「糖果低光」效果：粉彩糖果色的色带只压在文字下半部（`.44em`），默认奶油黄，另有玫瑰红、粉、薄荷绿、浅青、长春花蓝、丁香紫共七色，与既有 `[mark]` 背景标记（莫兰迪洗染）明确分工。
+- 修复管理员点击涂黑条无法取回原文的问题：Typecho 魔术属性 `isset` 误判导致签名令牌从未输出到页面；取回失败时现在会在悬浮提示中给出原因。
+- 涂黑占位条加高到约 1.2em 以完整覆盖一行字身，宽度按实际可见文字估算：忽略 `==`/加粗等标记符号并解码 HTML 实体，长度更贴近原文。
+- 修复关于页「赞赏」tab 内打赏/装备卡片消失、tab 被合并进标题的问题：高亮标记不允许再跨块级 HTML 配对，不会再吞掉 `== 标题 ==` 分隔符之间的内容。
+- 修复友人帐页面手机端可左右滑动的问题：小站信息等列表里的长 URL 会在窄屏内断行，页面增加横向溢出兜底。
+- 修复上一篇/下一篇、浏览器标签标题与社交分享卡片里 `&` 显示成 `&amp;` 的问题（个别预转义标题被二次转义）。
+- 修复文章页点赞、赞赏、评论复制链接等 Font Awesome 图标不显示的问题：图标样式恢复全站加载，cdnjs 加载失败时自动回落主题内置副本，大陆访问更稳。
+- 头部 meta 输出去重：不再让 Typecho 核心重复输出 description/keywords 与 og/twitter 标签，主题为唯一来源，核心摘要把 `[mark]` 等短代码原文漏进搜索与分享描述的问题一并消除。
+
+## [2.1.4] - 2026-09-10
+- 正文新增荧光笔高亮标记：`==文字==` 默认黄色，`==[red]文字==` 等七种颜色与分类色板一致；`[mark]` 短代码同步获得前台样式。
+- 新增涂黑标记 `||文字||`：原文在服务端剥离，不会出现在页面 HTML、RSS/Atom、摘要与 og:description 中，前台以等宽色块占位，说说同样支持。
+- 管理员登录后可点击涂黑条查看原文（服务端复核管理员身份与签名凭证，普通访客无任何交互入口）。
+- 文章页阅读设置新增「等宽」字体档，使用本地分片的 Sarasa Mono SC，按需加载、未选择时不下载。
+- 升级说明：QiwiTheme 伴生插件新增了正文内容钩子，更新后请在后台停用再启用一次 QiwiTheme，否则 feed 中的涂黑剥离与高亮不生效。
+
+## [2.1.3] - 2026-09-10
+- 修复首页置顶聚合导致部分文章在首页分页中永远不出现的问题，第 2 页起按首页实际占位补偿偏移。
+- 修复从 Plog 灯箱 PJAX 返回后整页无法滚动，以及外部脚本卡住导致主列长时间不可点击的问题；归档统计页不再提前列出定时文章。
+- 安全加固：Qiwi GTest 宕机降级不再允许本地校验通过并改用 HTTPS；移除遗留的 /goto 跳转路由；Qiwi 评论邮件队列接口未配置密钥时直接拒绝；Qiwi CAP 默认 widget 脚本固定版本。
+- 安全加固：访客“自己的待审核评论”改为凭 QiwiTheme 签名 Cookie 识别，说说取消点赞需持有点赞时签发的凭证，不再信任可伪造的昵称/邮箱。
+- 修复 Qiwi 评论邮件、Qiwi CAP、Qiwi Sitemap 停用再启用后配置被重置为默认值的问题：停用前自动备份，启用时还原。
+- 主题与验证码插件对“启用验证码”未保存时的默认语义统一为关闭，消除前台不显示验证码却被后端拒绝评论的死局。
+- 无 JS 环境下二级菜单直接展开、移动端导航常显；分页条窄屏自动换行；过长站名单行省略；文章与说说点赞失败给出反馈。
+- 移除旧侧栏模板与 6 个无用后台选项（侧栏文字/公告/模块/社交链接、一言）以及未接线的链接预览、即刻组件；后台“侧边栏”tab 取消，头像与不蒜子选项分别移入导航栏与网站信息。
+- 后台配置导入识别更高版本备份并提示；Thread 弹窗支持 Esc 关闭与焦点还原；修复友链仅含扩展字段时被编辑器丢弃、原始 JSON 缺字段时 PHP 8 报警告等问题。
+
+## [2.1.2] - 2026-08-19
+- 修复点击评论回复等页内锚点会触发整页重新加载、滚动位置被重置的问题。
+- 修复快速连续切换页面时页面脚本重复绑定监听器、造成内存泄漏的问题。
+- 顶部导航标题支持包含 | 字符（写成 \|），后台结构化编辑器与前台展示保持一致。
+- 浏览量去重合并为单个 Cookie，连续浏览多篇文章不再累积大量 Cookie。
+- 补齐评论定位高亮动画，README 新增站点根 /assets/ 静态资源映射部署说明。
+
+## [2.1.1] - 2026-08-19
+- 修复首页展示过滤误伤分类页、搜索页等列表和文章直链的问题，现在只作用于首页（含分页）。
+- 主题设置会检测 QiwiTheme 伴生插件的归档钩子注册状态，未注册时给出提示，从旧版本升级后重新激活插件即可恢复分类展示过滤。
+- 分类展示结构化编辑器保留已删除分类或加载失败时的历史配置，不再静默清空。
+- 修复定时发布的置顶文章可能提前出现在首页的问题。
+- 整包配置导入校验数据格式，粘贴错误内容时不再应用；修复评论身份保存与 PJAX 锚点定位的少数异常场景。
+
+## [2.1.0] - 2026-08-08
+- 移动端首页最近动态改为单行展示，整块区域可点击进入时光机。
+- 评论回复保留“回复某某”关系提示，取消移动端和桌面端的回复缩进。
+- 新增文章首页展示与 RSS 展示字段，并支持在主题设置中管理全局默认值。
+- 整站 RSS / Atom 和首页列表会按文章展示设置过滤内容，移除侧栏说说展示。
+- 分类描述支持 `[qiwi-meta]` 元数据块，可自定义分类页标题前缀、颜色和图标。
+
+## [2.0.8] - 2026-08-05
+- 关于页面支持用 `== 标题 ==` 切分多 tab，顶部头像区常驻，评论区自动归入"联系/留言"tab 末尾。
+- 新增 `[gear]` 装备卡与 `[reward]` 打赏卡短代码，打赏自动统计笔数与累计金额，卡片两列等高排列。
+- 关于页 tab 切换带横向滑动动效，重做 fold 折叠卡片视觉并修复展开/收起动画卡顿。
+
+## [2.0.7] - 2026-07-31
+- 优化说说与回复长文本折叠：文本排满整行后在行尾以省略号收尾，不再出现截断半行文字的情况。
+- 博客长评论默认折叠为部分内容，说说与评论的折叠、展开均带快速高度过渡动画。
+
+## [2.0.6] - 2026-07-30
+- 新增受保护附件短代码和后台快捷插入，支持附件信息卡片、下载文件名及 RSS 兼容提示。
+- 附件下载接入 Qiwi CAP 后端强制验证；Qiwi GTest 不参与附件验证，CAP 配置异常时禁止下载。
+- 附件下载新增真实进度提示和环形进度状态，并兼容 JSON 等文件类型。
+- 优化文章侧边目录进度计算与说说长文本折叠性能。
+
+## [2.0.5] - 2026-07-19
+- 修复说说粘贴图片后 Markdown 地址沿用图床接口返回域名的问题，改为使用当前配置的图床 API 域名。
+- 修复关闭文章或页面评论后，目录进度无法到达结尾节点的问题。
+
+## [2.0.4] - 2026-07-15
+- 修复 Time Machine RSS 原样显示表情代码的问题，改为输出兼容阅读器的 `[表情名]` 文本。
+- 首页最近动态支持直接显示说说中的表情图片。
+
+## [2.0.3] - 2026-07-15
+- 修复说说回复不同内容时移动评论框导致 Qiwi CAP 验证状态丢失、重复控件或误报失效的问题。
+- 优化 Qiwi CAP 在组件异步加载、重连和 token 过期场景下的状态恢复，避免过期验证继续启用提交。
+
+## [2.0.2] - 2026-07-13
+- 修复说说发布框无法添加表情、评论表情交互失效及评论框缺少人机验证的问题，并统一说说与博客评论样式。
+- 管理员访问文章或独立页面时可通过浮动按钮直接进入编辑，页面滚动超过阈值后显示返回顶部按钮。
+- 目录进度改为按相邻可见顶层标题之间的实际区域和节点位置计算，子标题只参与高亮，避免进度线越过未完成节点。
+- 版本更新抽屉与历史列表延续 1.5.9 的经典视觉，并避免当前版本在历史列表中重复出现。
+
+## [2.0.1] - 2026-07-13
+- 评论区和时光机回复新增本地微信表情包，并优化表情在正文中的行内显示。
+- 优化时光机多图排列与图片灯箱，支持长图滚动、点击缩放、明确的关闭入口和键盘焦点管理。
+- 修复 PJAX 导航后 Typecho 评论反垃圾 token 未重新初始化的问题。
+
+## [2.0.0] - 2026-07-12
+- 采用窄栏纸面设计重构首页、文章、评论、说说、图集、友链、归档与移动端导航。
+- 新增带页面动效、History 与失败回退的 PJAX 导航，保留真实 URL、SEO 信息和无 JavaScript 访问能力。
+- 保留文章与说说点赞、赞赏、验证码、浏览量、评论统计、Plog 多布局和归档文章字数。
+- 新增 V2 英文站名、侧栏 Slogan 与页脚 Motto 配置，并将“开往”入口调整到页脚。
+- 新增 `QiwiCap` 伴生插件并接入主题通用验证码接口，支持自托管 CAP proof-of-work 评论与后台登录验证；`QiwiCap` 与 `Geetest` 不能同时启用。
+- 修复 PJAX 下 LaTeX 渲染、旧浏览器链接跳转、可信评论图片灯箱、页面标题间距及 Qiwi CAP 登录查询兼容性。
+
+## [1.5.9] - 2026-07-03
+- 将前台与后台本地 assets 资源映射到站点根路径 `/assets/...`，修复 CSS、JS 和字体资源在 Typecho 1.3 环境下可能无法访问的问题。
+- 修复 Typecho 1.3 下 Plog 正文被 Markdown 标记和段落标签包裹后，标题、描述与图集内容无法正确解析的问题。
+
+## [1.5.6] - 2026-07-03
+- 文章页新增本地霞鹜文楷屏幕字体和阅读偏好控制，默认使用普通字体、宽间距和中字号，并保留本地持久化设置。
+- 优化文章点赞体验，点赞礼花从按钮位置单次出现，支持作者按钮会在点赞后显示。
+- 后台点赞记录同时展示说说和文章点赞明细，并新增文章点赞 tab 查看每篇文章点赞数量。
+- 后台增强资源加入文件版本参数，避免浏览器缓存导致点赞记录等新数据不刷新。
+
+## [1.5.5] - 2026-07-03
+- 优化 Typecho 1.3 后台中的 Qiwi 主题设置页宽度，移除旧的窄列布局限制。
+- 调整 `QiwiCommentMail` 控制台为全宽显示，避免测试表单和模板编辑区过窄。
+- 归档页书籍对比数量固定显示两位小数，例如 `1.00` 本。
+
+## [1.5.4] - 2026-07-03
+- 适配 Typecho 1.3 的 JSON 配置存储，确保 action、后台面板和主题配置在升级后继续可用。
+- 优化 `QiwiTheme` 伴生插件对 Typecho 1.3 配置表的读取兼容性。
+- 完成 Typecho 1.3 升级验证，覆盖首页、文章页、友链、说说、分类、Sitemap 和说说 RSS。
+
+## [1.5.3] - 2026-07-01
+- 评论和时光机回复支持创作者可信内容渲染链接、行内代码和图片，并接入图片灯箱。
+- 新增站内链接预览、外链预览，以及评论和说说链接复制按钮。
+- 优化文章列表标签数量和竖图缩略图展示，减少列表布局拥挤。
+
+## [1.5.2] - 2026-06-26
+- 友链页面新增朋友圈 RSS 动态标签页，可展示友站最近发布的文章。
+- 主题后台新增 QiwiRss 管理界面，支持检查服务状态、编辑远端抓取设置和管理 RSS 源。
+- 朋友圈动态列表展示作者、来源、发布时间、摘要和文章图片，并适配移动端阅读。
+
+## [1.5.1] - 2026-06-23
+- 伴生插件作者信息统一为 Leo 里奥，`Qiwi GTest` 和 `QiwiCommentMail` 保留原作者鸣谢。
+- 新增 `QiwiCommentMail` 伴生插件源码，将评论邮件改为独立邮件任务队列，区分管理员通知和用户回复通知。
+- `QiwiCommentMail` 支持自动处理队列、发送限速、失败重试、Resend 限流识别，并跳过博主在 Time Machine 发布的顶层动态。
+- 更新脚本会同步所有伴生插件，并移除旧的 `CommentToMail` 本地插件目录。
+- 公开链接和时光机图床默认地址迁移到 `bboreo.com`，移除旧域名默认引用。
+
+## [1.5.0] - 2026-06-16
+- 新增 Plog 页面模板，支持在正文中直接写标题、描述、图片、图集、尺寸与上传日期。
+- Plog 支持网格、瀑布流、画廊和时间流四种展示方式，并可按日期、标题、图集或手动顺序排序。
+- Plog 日期支持显示开关和日期/时间精度控制，适配 timestamp、`2026-06-15`、`2026/06/15`、`2026.06.15`、`20260615 19:50` 等日期写法。
+- 后台新增 Plog 可视化编辑器和“页面模板”tab，支持结构化编辑、拖拽排序和正文模板一键复制。
+
+## [1.4.14] - 2026-06-14
+- 后台主题设置改为浅色工作台视觉，表单层级、边框和主按钮颜色更贴近前台气质。
+- 文章详情页和文章列表新增分类链接展示，并沿用分类色彩。
+- 归档页新增时光机说说数量和字数统计，和文章字数分开展示。
+
+## [1.4.13] - 2026-05-31
+- 归档页、文章详情页和文章列表统一中英文混合字数统计。
+- 英文内容改为按单词计数，中文等东亚文字仍按字符计数，避免英文文章字数被高估。
+- 文章列表和 `thread-*` 文集阅读时间同步使用新的统计结果。
+
+## [1.4.12] - 2026-05-31
+- 默认版权说明新增版权协议选择，可展示 CC 协议或保留所有权利的徽章与链接。
+- 文章版权说明支持 `[noai]` 短代码，后台编辑工具栏同步提供快捷插入。
+- 归档页字数统计改为按可见文本计算，避免 HTML 标签影响统计结果。
+- 分类页 `thread-*` 文集列表改为更紧凑的状态、领域和摘要展示，并保留篇数信息。
+
+## [1.4.11] - 2026-05-14
+- 后台主题设置改为更克制的深色工作台视觉，使用暗色层级、细边框和蓝紫色主按钮。
+- 保存设置入口移到设置页标题栏右侧，保留 Typecho 原生提交逻辑。
+- 版本检查与更新命令移入“后台与安全”设置页，侧边栏版本号会跟随当前主题版本显示。
+- 修复后台 IP 归属地工具初始化中断导致友链、归档书籍和点赞记录无法正常展示的问题。
+- 外链统计和点赞记录列表改为固定高度滚动，避免长列表撑开设置页。
+
+## [1.4.10] - 2026-05-10
+- 优化评论区信息结构，评论总数会统计回复，评论内容、时间、归属地与回复入口展示更紧凑。
+- 评论头像支持 QQ 邮箱备用头像，评论和说说回复会显示 IP 归属地而非原始 IP。
+- 首页文章信息改为日期、阅读时间、字数、浏览量与可选评论数。
+- 侧边栏新增公告区域，支持不蒜子 `[PV]`、`[UV]` 等魔法标签与 `[province]` 访客归属地。
+- 外链统计改为后台请求记录，链接直接打开真实地址，不再显示外链图标。
+
+## [1.4.9] - 2026-05-10
+- 修复文章和页面中回复评论不显示的问题，评论回复会按父子关系正常展示。
+- 评论作者行新增“作者 > 被回复者”关系提示，被回复者名字可点击定位到对应评论。
+- 优化被定位评论的背景高亮效果，只高亮目标评论本身，避免影响子回复和侧边目录。
+- 调整嵌套评论宽度与层级展示，避免二级回复内容溢出正文区域。
+
+## [1.4.8] - 2026-05-07
+- Geetest 登录验证码改为在后台密码校验前验证，避免无效登录也进入后续认证流程。
+- 登录验证码会校验 session 中的 challenge 与服务端状态，验证成功后清理验证码会话，降低复用旧验证码的风险。
+- 补齐极验 failback 校验分支，并在自定义登录流程中保留登录成功、失败事件和当前用户状态同步。
+- `AGENTS.md` 新增标准发布流程，明确测试、版本同步、提交、PR、合并和 GitHub Release 步骤。
+
+## [1.4.7] - 2026-05-06
+- 重构后台主题设置为左右分栏工作台，左侧按内容呈现、页面数据和运维分组组织入口，右侧保留对应设置内容。
+- 设置页保留原有 Typecho 表单保存逻辑，同时统一字段卡片、按钮、结构化编辑器、原始数据区和移动端布局。
+- 设置导航支持键盘方向键切换，并会记住上次打开的设置栏目。
+- `QiwiTheme` 伴生插件新增后台面板入口，可从 Typecho 后台快速跳转到主题设置。
+- 文章版权说明新增魔法标签，可按 `[default]`、`[thread]`、`[not-by-ai]`、`[no-repost]` 等条件渲染版权组件；`[thread]` 会自动读取当前文章所属的 `thread-*` 文集分类。
+- RSS 输出会兜底隐藏密码保护文章正文、`<!--more-->` 后的内容和常见隐藏短代码，避免订阅源泄露私密正文。
+- 时光机说说恢复每条头像展示，新增 UP 主徽标、左下角本地化发布时间、点赞按钮和按说说归属的评论/回复树。
+- 调整说说正文图片上下空白，压缩连续空行与图片默认外距，让图文混排更贴近正文节奏。
+
+## [1.4.6] - 2026-05-06
+- 修正 Typecho 默认文章 RSS 的后处理挂载条件，并在条目输出阶段兜底清理正文短代码。
+- 修复 RSS / Atom 头像增强的输出位置：站点头像只作为频道级 `<image>`、Atom `<icon>` 与 `<logo>` 输出，避免阅读器把头像误当文章或说说头图。
+- RSS / Atom 文章条目现在会读取文章 `thumbnail` 自定义字段，并输出 `enclosure`、`media:content` 与 `media:thumbnail`，提升阅读器识别文章头图的稳定性。
+- Time Machine RSS 仅在动态正文真的包含图片时输出条目媒体图，不再给每条动态追加站点头像缩略图。
+- 增强 QiwiSitemap 的 feed 后处理启动时机，并为文章头图字段读取增加数据库兜底，确保 Typecho 原生 RSS / Atom 输出能稳定注入频道头像、短代码兼容和文章头图。
+
+## [1.4.5] - 2026-05-05
+- 增强 QiwiSitemap 的 RSS 短代码兼容，补齐 `[caramel]`、`[link]`、`[not-by-ai]` 等主题短代码，并对已转义短代码做兜底清理。
+- 规范 RSS / Atom 头像 URL，支持相对路径、站内绝对路径和协议相对地址，并回退到主题 Apple Touch Icon。
+- 为说说 RSS 补充频道头像和条目缩略图，提升阅读器头像识别稳定性。
+- 调整说说 RSS 标题生成：优先使用第一条非空正文行，并清理短代码、Markdown 与末尾标点。
+
+## [1.4.4] - 2026-05-04
+- 新增内容外链识别与跳转统计：外链会显示外链图标、悬浮展示真实 URL，并经由 `/goto?url=...` 记录后放行。
+- 后台主题设置新增“外链统计”临时面板，展示外链目标、域名、点击次数与最后点击时间。
+- 时光机说说支持裸链接自动解析，散落的链接会折叠展示为域名，并接入外链跳转逻辑。
+- 时光机发布框新增简易 Markdown 工具栏，支持粗体、斜体、链接、图片、引用、行内代码与常用快捷键。
+- 修复 RSS 中 `[orange]` 等主题颜色短代码可能原样露出的问题，优先转换为阅读器可显示的 HTML，非 CDATA 文本中回退为纯文本。
+
+## [1.4.3] - 2026-05-03
+- 修复新增 `thread-*` 文集首次保存时文章块、文字块和文集元数据可能丢失的问题。
+- 修复首页分页、分类分页等列表页侧边栏“闲言碎语”不显示的问题。
+- 修复移动端页面滚动后展开导航抽屉位置错误、导航消失与背景仍可滚动的问题。
+- 新增 `thread-*` 分类的 Thread 专题文集页面，使用完整无侧边栏布局展示文集简介、状态、领域与阅读路线。
+- Thread 阅读路线支持自动文章列表，也支持后台配置文章块、文字块与 Markdown 块。
+- 新增 `QiwiTheme` 主题伴生插件，将 Thread 完整 JSON 存入独立数据表，分类描述只保留短摘要以避开 Typecho 数据库字段限制。
+- 后台分类编辑页在插件启用后会接管 `thread-*` 文集描述，提供可视化块编辑、文章选择、拖拽排序、保存与 JSON 查看。
+
+## [1.4.2] - 2026-05-03
+- 新增首页、归档与文章页 canonical 输出，统一搜索引擎可索引 URL 信号。
+- 规范 HTML `lang` 输出，将 `zh_CN` 等写法转换为 `zh-CN`。
+- 为页面补充 Open Graph、Twitter Card 元信息，并为文章页输出 BlogPosting JSON-LD。
+- 使用站点头像生成主题 favicon、32x32 PNG 与 Apple Touch Icon，修复 favicon 404。
+- 优化移动端导航抽屉位置与隐藏状态，避免菜单展开后停在页面顶部，并防止隐藏链接进入键盘焦点流。
+- 提升辅助文字颜色对比度，改善移动端 Lighthouse Accessibility 结果。
+- 为文章列表缩略图与文章头图补充尺寸、异步解码与加载优先级提示。
+- `update.sh` 新增伴生插件同步步骤，更新主题后会把 `plugins/*` 同步到 Typecho 的 `usr/plugins/` 目录。
+
+## [1.4.1] - 2026-05-03
+- 新增 `QiwiSitemap` 伴生插件源码，提供标准 sitemap、robots.txt 与 RSS/Atom 发现链接。
+- Sitemap 使用真实发布时间与修改时间生成 `lastmod`，并过滤未发布、加密和未来发布时间的内容。
+- 支持文章、独立页面、分类、标签拆分 sitemap，以及按 CID 排除特定内容。
+- Sitemap 浏览器可视化页面支持读取 Qiwi 主题头像配置，并展示 RSS 订阅入口。
+- 移除旧版 `Sitemaplanbin.zip` 插件包，改为随主题维护的 MIT 插件实现。
+
+## [1.4.0] - 2026-05-02
+- 合并新版 Qiwi 设计系统 token，统一纸面、焦糖墨、批注色、字阶、间距、圆角与动效变量。
+- 优化文章页标题区、正文标题间距、文章标签/版权附注与上一篇/下一篇导航。
+- 文章底部新增 Z2 附注区域，合并版权说明与标签；上一篇/下一篇支持整块点击。
+- 新增文章级版权说明字段，并新增全站默认版权说明；优先级为文章字段、全站默认、主题内置默认。
+- 扩展正文短代码组件，新增 `[badge]`、`[callout]`、`[button]` 与 `[buttons]`，并增强 `[fold]` 的默认展开、收起与无分隔线样式配置。
+- 前台与后台预览区新增折叠块展开/收起动画，保留无 JavaScript 时的原生 `details` 可用性。
+- 后台主题设置新增“网站信息”分组，集中管理 Logo、页脚、自定义 CSS/JS、追踪代码与默认版权说明。
+- 首页新增 Hero 区域，支持彩色短代码轮播、一言模式、淡入淡出/打字机切换、打字速度与停顿配置。
+- 首页 Hero 一言请求加入超时兜底，轮播改为按次调度，并让文字选中高亮跟随当前强调色。
+- 优化移动端导航为顶部下滑抽屉，支持二级菜单折叠、点击外部关闭与小屏滚动锁定。
+- 重做首页侧边栏个人信息区，导航栏头像与侧边栏头像/文字/社交链接拆分配置。
+- 侧边栏社交链接改为结构化编辑器，支持自定义数量、图标、悬浮名称和链接，并与原始数据双向同步。
+- 后台主题设置重排为首页、导航栏、侧边栏、网站信息、关于页面、友链、归档、后台与安全、原始数据；结构化配置与原始数据双向同步。
+- 新增整包配置导入/导出，支持 JSON 与 Base64，导入仅替换当前表单并保留手动保存确认。
+- 后台可渲染文本输入加入短代码/颜色快捷工具栏，默认建议改为 placeholder 形式展示。
+- 后台文章编辑器新增 Qiwi 快捷插入菜单，可直接插入彩色文字、背景标记和折叠块短代码。
+- 文章列表、侧边栏标签和分类链接统一彩色 term 样式，正文表格样式也同步优化。
+
+## [1.3.5] - 2026-05-01
+- 更新检查默认改用 GitHub Contents API 读取 `update.json`，避免 raw 文件缓存导致版本提示延迟。
+- 更新设置弹窗新增更新源选择，可在 GitHub API 与 Raw `update.json` 之间切换。
+- 修复文章/页面关闭侧边目录后仍显示目录的问题，字段读取失败时会回查 Typecho `fields` 表。
+- 新增后台文章/页面编辑器短代码预览样式，彩色文字、标记高亮与折叠面板可在预览区直接查看。
+- 修复后台短代码预览在 Markdown 粗体、链接等跨节点内容中与前台渲染不一致的问题。
+
+## [1.3.4] - 2026-05-01
+- 新增前台版本弹窗开关，可关闭版本变化后的自动更新公告弹出，页脚版本号仍可手动查看日志。
+- 后台友链编辑器支持分类与友链拖拽排序，新增友链或分类后会自动滚动并聚焦到新条目。
+- 更新命令新增 Typecho 根目录设置弹窗，适配 Docker、挂载目录等需要手动指定宿主机路径的场景。
+- 修复 Typecho 后台全局 `span` 间距影响折叠图标与“已是最新版”状态居中的问题。
+
+## [1.3.3] - 2026-05-01
+- 新增后台异步版本检查，使用静态 `update.json` 读取远程版本信息。
+- 主题设置顶部新增更新提示卡片，支持加载状态、最新版提示和更新日志展开。
+- 新增 Linux 更新脚本 `update.sh`，可在当前主题目录内直接执行 `git pull` 更新。
+- 更新提示会根据当前主题目录生成命令，避免手动 `cd` 到错误位置。
+
+## [1.3.2] - 2026-05-01
+- 修复独立页面 LaTeX 资源未加载的问题，支持按内容自动检测公式并兼容 `$...$`、`$$...$$`、`\(...\)` 与 `\[...\]`。
+- 新增文章与页面级侧边目录控制，默认显示，可按单篇内容关闭，并增强目录标题解析与重复锚点处理。
+- 优化后台扩展字段展示，按文章/页面拆分相关设置，减少无关字段干扰。
+- 重构主题设置后台为可视化 Tab 面板，支持导航、友链、书籍统计、首页、侧边栏、关于页面、安全与原始数据分组。
+- 友链后台管理支持分类折叠、友链折叠预览、头像懒加载、展开编辑与图标化操作。
+- 书籍统计新增可视化增删排序编辑器，并优化数字输入框和图标按钮样式。
+
+## [1.3.1] - 2026-04-30
+- 优化正文图片展示，移除 hover 浮动、阴影与自动图注，新增桌面端图片灯箱预览。
+- 灯箱支持从原图位置缩放打开与关闭，修复遮罩层级、滚动锁定与顶部导航残留问题。
+- 移动端禁用图片灯箱，保留普通图片浏览体验。
+- 调整时光机页面动态流样式，修复正文继承文章底部间距导致说说间隔过大的问题。
+- 时光机列表仅首条展示头像，后续动态保留头像占位以保持内容对齐，并移除条目分隔线。
+- 修复自动导航读取独立页面展示字段时可能误判隐藏的问题。
+- 友链页面正文移动到友链列表之后、申请表单之前，并微调补充说明文字尺寸。
+- 时光机图床设置按钮改用 Font Awesome 图标，并增加缺失元素时的空值保护。
+
+## [1.3.0] - 2026-04-30
+- 新增可配置顶部导航，支持页面 slug、页面模板、站内路径、外链、二级菜单与可选 Font Awesome 图标。
+- 独立页面新增”顶部导航栏展示”字段，可控制页面是否出现在自动生成的导航栏中。
+- 新增内容短代码渲染，支持 `[red]...[/red]` 等七色文字、`[mark color=”blue”]...[/mark]` 淡色标注与 `[fold title=”...”]...[/fold]` 折叠面板。
+- 优化原生 `details/summary` 在正文、页面简介与归档说明中的显示样式。
+- 友链页面新增副标题字段，并将页面正文移动到友链页底部作为补充信息区域。
+- 优化标签云为纯文字样式，并改进分类/标签/归档页面链接解析逻辑。
+- 修正导航按钮与移动端导航项圆角为 8px，统一设计系统圆角体系。
+- 移除移动端代码块复制按钮的全宽覆盖，恢复自然尺寸。
+- 统一 body 过渡动画为设计系统变量 `var(--transition)`。
+- 清理导航列表冗余的 `list-style` 声明。
+
+## [1.2.7] - 2026-03-22
+- 新增文章浏览量记录与展示能力，详情页现在会显示浏览量。
+- 调整文章列表时间展示，统一改为更自然的相对时间格式。
+- 补充文章详情页元信息，展示完整发布时间、阅读时长与评论数量。
+- 为浏览量统计增加轻量去重逻辑，同一访客 1 小时内重复访问同一文章不会重复计数。
+
+## [1.2.6] - 2026-03-19
+- 新增首页即刻条，可在主题设置中选择展示位置与时间显示方式。
+- 支持从时间机器页面提取最新动态并在首页轮播展示。
+- 修复纯图片或纯代码动态在首页即刻条中被静默跳过的问题，现在会显示兜底提示文案。
+
+## [1.2.5] - 2026-03-19
+- 新增文章目录 TOC，支持回到顶部、前往评论与当前标题高亮。
+- 调整单篇文章双栏布局，改为正文在左、目录在右，同时整理侧边栏粘性结构。
+- 修复无二级标题或脚本不可用时仍保留 TOC 空白栏的问题。
+- 修复目录跳转后标题被顶部粘性导航遮挡的问题。
+
+## [1.2.4] - 2026-03-18
+- 修复移动端首页与归档页中侧边栏仍保持左右并列的问题，小屏下改为位于主内容下方。
+- 恢复页脚版本更新抽屉的正常结构与弹层交互，避免更新内容直接在页面底部展开。
+- 保留移动端导航折叠，并继续优化小屏下页脚、分页和正文区域的可读性。
+
+## [1.1.3] - 2025-09-29
+- 新增了验证码功能，提升评论区的安全性和防垃圾评论能力。
+
+## [1.1.2-alpha] - 2025-09-26
+### Feature Enhancements
+
+This release introduces a day/night mode toggle, major improvements to the friends page, and optimizations for theme initialization.
+
+### Added
+- **Day/Night Mode Toggle**: Added a toggle button for switching between light and dark themes, with persistent user preference.
+- **Friends Editor**: Introduced a visual editor for managing friends, supporting JSON input for easier configuration.
+- **Friends Page Comments**: Implemented a comments section on the friends page, including submission handling and custom styling.
+
+### Changed
+- **Theme Toggle Button**: Enhanced the appearance and interactivity of the theme toggle button for a better user experience.
+- **Friends Page**: Refactored styles and updated the page description for improved clarity and a more welcoming tone.
+- **Friends Page Comments**: Enhanced the comment section with improved layout and styling.
+
+### Fixed
+- **Theme Flicker**: Optimized theme initialization to prevent flickering when loading the site.
+
+## [1.1.1-alpha] - 2025-09-25
+### Major Feature Update
+
+This alpha release introduces significant enhancements, including the "Timemachine" feature for interactive commenting, a redesigned post layout, improved navigation, and extensive theme customization options.
+
+### Added
+- **Timemachine Feature**: A new page template for posting and viewing comments with Markdown support and a floating action button for quick submissions.
+- **Enhanced Post Layout**: Redesigned single post layout with a new card container for better readability.
+- **Floating Navigation**: Added a floating navigation bar that appears on scroll for improved user experience on long pages.
+- **Theme Options**:
+  - Background image configuration.
+  - New layout options for greater customization.
+  - Custom footer information and tracking code options.
+- **Post Card Component**: Created a reusable post card component displaying metadata and estimated reading time.
+- **Traditional Pagination**: Implemented standard numbered pagination for archive pages.
+
+### Changed
+- **Post Navigation**: Enhanced previous/next post links with a disabled state and improved styling.
+- **Sidebar Comments Widget**: Upgraded the recent comments widget to support filtering by multiple page slugs.
+- **Floating Navigation Logic**: Improved responsiveness and visibility logic for the floating navigation bar.
+- **Stylesheet Path**: Updated the header to use the correct stylesheet path within the `assets` directory.
+
+### Fixed
+- **Floating Navigation Visibility**: Corrected a bug where the floating navigation would not appear correctly during scrolling.
+- **Comment Submission**: Improved the Timemachine comment submission process with better debugging and token validation.
+- **Recent Comments Filtering**: The recent comments widget now correctly excludes comments from specific pages and limits the display count.
+- **Timemachine UI**: Updated the SVG stroke color and button design for better visibility.
+- **Thumbnail Display**: Corrected the default value for the `showThumbnail` option to ensure thumbnails are displayed correctly.
+
+### Removed
+- **AJAX Load More**: Removed the "Load More" button in favor of traditional pagination for improved accessibility and SEO.
+
+## [1.0.2-alpha] - 2025-09-06
+### Pre-release Updates
+
+This alpha release includes enhancements to excerpt handling, thumbnail display, user editing capabilities, and licensing updates.
+
+### Added
+- Support for custom post excerpts in theme
+- Enhanced thumbnail display options and styles for posts
+- Edit button for logged-in users on post and archive pages
+- Options for thumbnail display and expiry properties in theme fields
+- LICENSE and SECURITY files with copyright and reporting information
+
+### Fixed
+- Excerpt display logic to use the correct method for rendering
+- Theme version updated to 1.0.1 in footer and index files
+- Theme version updated to 1.0.0 and added version.php for dynamic version display
+- License header corrected to include "MIT LICENSE"
+
+### Changed
+- Added version name "Qiwer" to the initial stable release in CHANGELOG
+
+## [1.0.0] - 2025-09-06
+### Initial Stable Release
+
+This is the first stable release of the Qiwi theme for Typecho, transitioning from the initial development version (0.0.1) to a fully featured, production-ready theme. Qiwi provides a clean, minimalist dark design focused on readability and modern web standards. The name of this version (1.0) is called Qiwer.
+
+### Added
+- **Core Theme Structure**: Complete WordPress-like theme files including `index.php`, `post.php`, `page.php`, `header.php`, `footer.php`, `sidebar.php`, `functions.php`, `archive.php`, `404.php`, and `comments.php`.
+- **Dark Minimalist Design**: Comprehensive CSS styling with custom properties (variables) for colors, typography, spacing, and layout. Features a sophisticated dark color scheme with accent highlights.
+- **Responsive Layout**: Mobile-first design with grid-based main wrapper, adaptive sidebar, and breakpoints for tablets and phones. Supports full-width content up to 1200px.
+- **Post and Page Rendering**: 
+  - Archive and single post previews with excerpts, metadata (date, comments, categories), and hover effects.
+  - Full single post and page support with rich content rendering (images, blockquotes, code blocks, tables with alignment).
+- **Sidebar Widgets**: Configurable sidebar with support for recent posts, recent comments, categories, archives, and other miscellaneous widgets. Sticky positioning on desktop.
+- **Comment System**: Enhanced comment display with nested replies, author metadata, timestamps, and a styled comment form. Includes pagination for comment threads.
+- **Search Functionality**: Integrated search form in the header with icon and placeholder support.
+- **Navigation and Pagination**: Site navigation with dynamic page links, breadcrumb-style pagination for archives, and post navigation (previous/next).
+- **LaTeX Support**: Optional KaTeX integration for mathematical rendering in posts, enabled via post fields.
+- **Advanced Content Features**:
+  - Tags display with cloud-style rendering.
+  - Table support with responsive scrolling, alignment, and styling variants (compact, borderless).
+  - Empty state handling for no posts.
+  - Back-to-top button with smooth scroll.
+- **Theme Configuration**: Admin panel options for logo URL and sidebar block selection (recent posts, comments, categories, archives, other).
+- **Accessibility and UX**: Semantic HTML, SVG icons for metadata, focus states, print styles, and screen-reader utilities.
+- **Performance and Compatibility**: Optimized CSS (1525 lines of unified styling), no external dependencies except optional KaTeX CDN.
+
+### Changed
+- **Version Update**: Bumped from 0.0.1 to 1.0.0, marking the theme as stable.
+- **Documentation**: Updated README.md with installation instructions, customization guide, and feature list. Added screenshot reference.
+
+### Documentation
+- See [README.md](README.md) for setup and customization details.
+- Theme uses MIT License.
+
+### Known Issues
+- LaTeX rendering requires manual enabling per post.
+- Search is basic; advanced search not implemented yet.
+
+This release establishes Qiwi as a robust, feature-complete theme for Typecho users seeking a modern dark interface.

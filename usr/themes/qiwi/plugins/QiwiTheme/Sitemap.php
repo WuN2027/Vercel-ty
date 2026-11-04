@@ -1,0 +1,821 @@
+<?php
+if (!defined('__TYPECHO_ROOT_DIR__')) {
+    exit;
+}
+
+/**
+ * Qiwi sitemap / feed discovery 模块（原 QiwiSitemap 独立插件并入）。
+ * 配置全部来自主题设置（theme:qiwi 配置行），本模块不再持有插件配置。
+ *
+ * @package QiwiTheme
+ * @author  Leo 里奥
+ * @version 2.2.0
+ * @link    https://bboreo.com/
+ */
+class QiwiTheme_Sitemap
+{
+    // 路由 URL 是对外契约（搜索引擎收录、robots.txt 引用），一个字符都不能变。
+    public static $routes = array(
+        array('name' => 'index', 'url' => '/sitemap.xml', 'action' => 'action'),
+        array('name' => 'posts', 'url' => '/sitemap-posts.xml', 'action' => 'posts'),
+        array('name' => 'pages', 'url' => '/sitemap-pages.xml', 'action' => 'pages'),
+        array('name' => 'categories', 'url' => '/sitemap-categories.xml', 'action' => 'categories'),
+        array('name' => 'tags', 'url' => '/sitemap-tags.xml', 'action' => 'tags'),
+        array('name' => 'moments', 'url' => '/timemachine.xml', 'action' => 'moments'),
+        array('name' => 'xsl', 'url' => '/sitemap.xsl', 'action' => 'xsl'),
+        array('name' => 'robots', 'url' => '/robots.txt', 'action' => 'robots'),
+    );
+
+    public static $legacyRoutes = array(
+        'sitemap_action_route',
+        'sitemap_tags_route',
+        'sitemap_category_route',
+    );
+
+    private static $feedContext = null;
+    private static $feedBufferStarted = false;
+
+    public static function header($archive = null)
+    {
+        try {
+            self::headerInternal();
+        } catch (Exception $e) {
+        } catch (Throwable $e) {
+        }
+    }
+
+    private static function headerInternal()
+    {
+        if (self::setting('enableFeedDiscovery', '1') !== '1') {
+            return;
+        }
+
+        $options = Helper::options();
+        $siteTitle = self::escapeHtml($options->title);
+        $sitemapUrl = self::routeUrl('/sitemap.xml', $options);
+        $rssUrl = self::normalUrl(self::optionValue($options, 'feedUrl'));
+        $rss1Url = self::normalUrl(self::optionValue($options, 'feedRssUrl'));
+        $atomUrl = self::normalUrl(self::optionValue($options, 'feedAtomUrl'));
+        $momentsUrl = self::routeUrl('/timemachine.xml', $options);
+
+        echo "\n" . '<link rel="sitemap" type="application/xml" title="' . $siteTitle . ' Sitemap" href="' . self::escapeHtml($sitemapUrl) . '">' . "\n";
+
+        if ($rssUrl !== '') {
+            echo '<link rel="alternate" type="application/rss+xml" title="' . $siteTitle . ' RSS" href="' . self::escapeHtml($rssUrl) . '">' . "\n";
+        }
+
+        if ($rss1Url !== '' && $rss1Url !== $rssUrl) {
+            echo '<link rel="alternate" type="application/rdf+xml" title="' . $siteTitle . ' RSS 1.0" href="' . self::escapeHtml($rss1Url) . '">' . "\n";
+        }
+
+        if ($atomUrl !== '' && $atomUrl !== $rssUrl) {
+            echo '<link rel="alternate" type="application/atom+xml" title="' . $siteTitle . ' Atom" href="' . self::escapeHtml($atomUrl) . '">' . "\n";
+        }
+
+        if (self::setting('enableMomentsFeed', '1') === '1') {
+            echo '<link rel="alternate" type="application/rss+xml" title="' . $siteTitle . ' 说说 RSS" href="' . self::escapeHtml($momentsUrl) . '">' . "\n";
+        }
+    }
+
+    public static function handleInit($archive, $select)
+    {
+        try {
+            $feedType = self::archiveFeedType($archive);
+            self::startFeedBuffer($feedType);
+        } catch (Exception $e) {
+        } catch (Throwable $e) {
+        }
+    }
+
+    public static function feedItem($feedType, $archive)
+    {
+        try {
+            self::startFeedBuffer($feedType);
+            self::filterFeedItemContent($archive);
+            return self::feedItemMediaSuffix($feedType, $archive);
+        } catch (Exception $e) {
+            return null;
+        } catch (Throwable $e) {
+            return null;
+        }
+    }
+
+    public static function commentFeedItem($feedType, $comments)
+    {
+        try {
+            self::startFeedBuffer($feedType);
+            self::filterFeedItemContent($comments);
+        } catch (Exception $e) {
+        } catch (Throwable $e) {
+        }
+        return null;
+    }
+
+    private static function startFeedBuffer($feedType)
+    {
+        $feedType = (string) $feedType;
+        if ($feedType === '' || self::$feedBufferStarted) {
+            return;
+        }
+
+        $options = Helper::options();
+        $enableAvatar = self::setting('enableFeedAvatar', '1') === '1';
+        $enableShortcodes = self::setting('enableFeedShortcodeCompat', '1') === '1';
+        $enablePrivacy = true;
+        $avatarUrl = $enableAvatar ? self::feedAvatarUrl($options) : '';
+
+        if (!$enableShortcodes && !$enablePrivacy && ($avatarUrl === '')) {
+            return;
+        }
+
+        self::$feedContext = array(
+            'avatarUrl' => $avatarUrl,
+            'title' => self::optionValue($options, 'title'),
+            'homeUrl' => rtrim(self::optionValue($options, 'siteUrl'), '/') . '/',
+            'feedType' => $feedType,
+            'enableAvatar' => $enableAvatar && $avatarUrl !== '',
+            'enableShortcodes' => $enableShortcodes,
+            'enablePrivacy' => $enablePrivacy,
+        );
+        self::$feedBufferStarted = true;
+
+        ob_start(array(__CLASS__, 'filterFeedXml'));
+    }
+
+    private static function archiveFeedType($archive)
+    {
+        if (is_object($archive) && method_exists($archive, 'getFeedType')) {
+            $feedType = (string) $archive->getFeedType();
+            if ($feedType !== '') {
+                return $feedType;
+            }
+        }
+
+        if (is_object($archive) && isset($archive->feedType)) {
+            return (string) $archive->feedType;
+        }
+
+        return '';
+    }
+
+    private static function filterFeedItemContent($item)
+    {
+        if (!is_object($item)) {
+            return;
+        }
+
+        $isProtected = self::isFeedItemProtected($item);
+        foreach (array('content', 'excerpt') as $name) {
+            $value = null;
+            try {
+                $value = $item->{$name};
+            } catch (Exception $e) {
+                $value = null;
+            } catch (Throwable $e) {
+                $value = null;
+            }
+
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            if ($isProtected) {
+                $item->{$name} = self::feedProtectedMessage();
+                continue;
+            }
+
+            $value = self::sanitizeFeedPrivateContent((string) $value);
+            if (self::setting('enableFeedShortcodeCompat', '1') === '1') {
+                $value = self::renderFeedHtml($value);
+            }
+            $item->{$name} = $value;
+        }
+    }
+
+    public static function filterFeedXml($xml)
+    {
+        if (self::$feedContext === null || trim($xml) === '') {
+            return $xml;
+        }
+
+        if (!empty(self::$feedContext['enablePrivacy'])) {
+            $xml = self::filterFeedPrivateContent($xml);
+        }
+
+        if (!empty(self::$feedContext['enableShortcodes'])) {
+            $xml = self::filterFeedShortcodes($xml);
+        }
+
+        if (empty(self::$feedContext['enableAvatar'])) {
+            return $xml;
+        }
+
+        $avatarUrl = self::xml(self::$feedContext['avatarUrl']);
+        $title = self::xml(self::$feedContext['title']);
+        $homeUrl = self::xml(self::$feedContext['homeUrl']);
+        $feedType = self::$feedContext['feedType'];
+
+        if ($feedType === 'ATOM 1.0' && strpos($xml, '<icon>') === false) {
+            return preg_replace_callback(
+                '/(<feed\b[^>]*>\s*)/s',
+                function ($matches) use ($avatarUrl) {
+                    return $matches[1] . '<icon>' . $avatarUrl . '</icon>' . "\n" . '<logo>' . $avatarUrl . '</logo>' . "\n";
+                },
+                $xml,
+                1
+            );
+        }
+
+        if ($feedType === 'RSS 1.0' && strpos($xml, '<image rdf:') === false) {
+            $xml = preg_replace_callback(
+                '/(<description>.*?<\/description>\s*)/s',
+                function ($matches) use ($avatarUrl) {
+                    return $matches[1] . '<image rdf:resource="' . $avatarUrl . '" />' . "\n";
+                },
+                $xml,
+                1
+            );
+
+            return preg_replace_callback(
+                '/<\/rdf:RDF>\s*$/',
+                function () use ($avatarUrl, $title, $homeUrl) {
+                    return '<image rdf:about="' . $avatarUrl . '">' . "\n" .
+                        '<title>' . $title . '</title>' . "\n" .
+                        '<url>' . $avatarUrl . '</url>' . "\n" .
+                        '<link>' . $homeUrl . '</link>' . "\n" .
+                        '</image>' . "\n" .
+                        '</rdf:RDF>';
+                },
+                $xml,
+                1
+            );
+        }
+
+        if ($feedType === 'RSS 2.0' && strpos($xml, '<image>') === false) {
+            $image = '<image>' . "\n" .
+                '<url>' . $avatarUrl . '</url>' . "\n" .
+                '<title>' . $title . '</title>' . "\n" .
+                '<link>' . $homeUrl . '</link>' . "\n" .
+                '</image>' . "\n";
+
+            return preg_replace_callback(
+                '/(<channel>\s*)/s',
+                function ($matches) use ($image) {
+                    return $matches[1] . $image;
+                },
+                $xml,
+                1
+            );
+        }
+
+        return $xml;
+    }
+
+    /**
+     * 读主题配置：主题配置行在站点处于激活状态时会并入 Widget_Options，
+     * 读不到时回退 QiwiTheme_Plugin::getThemeOption 的 options 行直读。
+     */
+    private static function setting($name, $default)
+    {
+        try {
+            $options = Helper::options();
+            $value = $options->{$name};
+            if ($value !== null && $value !== '') {
+                return (string) $value;
+            }
+        } catch (Exception $e) {
+        } catch (Throwable $e) {
+        }
+
+        if (class_exists('QiwiTheme_Plugin')) {
+            return (string) QiwiTheme_Plugin::getThemeOption($name, $default);
+        }
+
+        return $default;
+    }
+
+    private static function optionValue($options, $name)
+    {
+        $value = $options->{$name};
+        return $value !== null ? trim((string) $value) : '';
+    }
+
+    private static function routeUrl($path, $options)
+    {
+        return Typecho_Common::url($path, $options->index);
+    }
+
+    private static function feedItemMediaSuffix($feedType, $archive)
+    {
+        if (!is_object($archive)) {
+            return null;
+        }
+
+        if (self::isFeedItemProtected($archive)) {
+            return null;
+        }
+
+        $thumbnail = self::feedItemThumbnailUrl($archive, Helper::options());
+        if ($thumbnail === '') {
+            return null;
+        }
+
+        return self::feedImageMediaSuffix($feedType, $thumbnail);
+    }
+
+    private static function feedItemThumbnailUrl($archive, $options)
+    {
+        $thumbnail = '';
+        try {
+            if (isset($archive->fields) && isset($archive->fields->thumbnail)) {
+                $thumbnail = (string) $archive->fields->thumbnail;
+            }
+        } catch (Exception $e) {
+            $thumbnail = '';
+        } catch (Throwable $e) {
+            $thumbnail = '';
+        }
+
+        if (trim($thumbnail) === '') {
+            $thumbnail = self::fieldValueByCid(self::objectIntValue($archive, 'cid'), 'thumbnail');
+        }
+
+        return self::normalizeImageUrl($thumbnail, $options);
+    }
+
+    private static function fieldValueByCid($cid, $name)
+    {
+        $cid = (int) $cid;
+        if ($cid <= 0 || $name === '') {
+            return '';
+        }
+
+        try {
+            $db = Typecho_Db::get();
+            $row = $db->fetchRow($db->select('str_value')
+                ->from('table.fields')
+                ->where('cid = ?', $cid)
+                ->where('name = ?', $name)
+                ->limit(1));
+
+            return $row && isset($row['str_value']) ? (string) $row['str_value'] : '';
+        } catch (Exception $e) {
+            return '';
+        } catch (Throwable $e) {
+            return '';
+        }
+    }
+
+    private static function objectIntValue($object, $name)
+    {
+        if (!is_object($object) || $name === '') {
+            return 0;
+        }
+
+        try {
+            return isset($object->{$name}) ? (int) $object->{$name} : 0;
+        } catch (Exception $e) {
+            return 0;
+        } catch (Throwable $e) {
+            return 0;
+        }
+    }
+
+    private static function objectStringValue($object, $name)
+    {
+        if (!is_object($object) || $name === '') {
+            return '';
+        }
+
+        try {
+            return isset($object->{$name}) ? (string) $object->{$name} : '';
+        } catch (Exception $e) {
+            return '';
+        } catch (Throwable $e) {
+            return '';
+        }
+    }
+
+    private static function isFeedItemProtected($item)
+    {
+        if (!is_object($item)) {
+            return false;
+        }
+
+        $password = self::objectStringValue($item, 'password');
+        if (trim($password) !== '') {
+            return true;
+        }
+
+        $hidden = strtolower(trim(self::objectStringValue($item, 'hidden')));
+        return $hidden === '1' || $hidden === 'true' || $hidden === 'yes';
+    }
+
+    private static function feedProtectedMessage()
+    {
+        return '<p>这篇内容受密码保护，请到原文输入密码后查看。</p>';
+    }
+
+    private static function feedHiddenMessage()
+    {
+        return '<p>隐藏内容请前往原文查看。</p>';
+    }
+
+    private static function sanitizeFeedPrivateContent($html)
+    {
+        $html = (string) $html;
+        if ($html === '') {
+            return '';
+        }
+
+        $hiddenMessage = self::feedHiddenMessage();
+        $html = preg_replace('/<!--\s*(?:more|readmore)(?:\s+[^>]*)?-->([\s\S]*)$/iu', $hiddenMessage, $html);
+        $html = preg_replace('/<!--\s*(?:hide|hidden|secret|private)\s*-->[\s\S]*?<!--\s*\/(?:hide|hidden|secret|private)\s*-->/iu', $hiddenMessage, $html);
+        $html = preg_replace('/\[(?:hide|hidden|secret|private|password|protected)(?:\s+[^\]]*)?\][\s\S]*?\[\/(?:hide|hidden|secret|private|password|protected)\]/iu', $hiddenMessage, $html);
+        $html = preg_replace('/<(div|section|aside|span)\b[^>]*class=(["\'])[^"\']*\b(?:protected|hidden-content|qiwi-hidden|secret|private)\b[^"\']*\2[^>]*>[\s\S]*?<\/\1>/iu', $hiddenMessage, $html);
+
+        return $html;
+    }
+
+    private static function filterFeedPrivateContent($xml)
+    {
+        $xml = preg_replace_callback('/<!\[CDATA\[([\s\S]*?)\]\]>/u', function ($matches) {
+            return '<![CDATA[' . str_replace(']]>', ']]]]><![CDATA[>', self::sanitizeFeedPrivateContent($matches[1])) . ']]>';
+        }, $xml);
+
+        return preg_replace_callback('/(<(description|summary|content:encoded|content)\b[^>]*>)(?!<!\[CDATA\[)([\s\S]*?)(<\/\2>)/iu', function ($matches) {
+            $text = html_entity_decode($matches[3], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            return $matches[1] . self::xml(strip_tags(self::sanitizeFeedPrivateContent($text))) . $matches[4];
+        }, $xml);
+    }
+
+    public static function feedImageMediaSuffix($feedType, $imageUrl)
+    {
+        $imageUrl = trim((string) $imageUrl);
+        if ($imageUrl === '') {
+            return null;
+        }
+
+        $mimeType = self::imageMimeType($imageUrl);
+        $url = self::xml($imageUrl);
+        $typeAttr = $mimeType !== '' ? ' type="' . self::xml($mimeType) . '"' : '';
+
+        if ($feedType === 'ATOM 1.0') {
+            return '<link rel="enclosure"' . $typeAttr . ' href="' . $url . '" />' . "\n" .
+                '<media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="' . $url . '" />' . "\n";
+        }
+
+        if ($feedType !== 'RSS 2.0') {
+            return null;
+        }
+
+        $suffix = '';
+        if ($mimeType !== '' && preg_match('/^https?:\/\//i', $imageUrl)) {
+            $suffix .= '<enclosure url="' . $url . '" length="0" type="' . self::xml($mimeType) . '" />' . "\n";
+        }
+
+        $suffix .= '<media:content xmlns:media="http://search.yahoo.com/mrss/" url="' . $url . '" medium="image"' . $typeAttr . ' />' . "\n";
+        $suffix .= '<media:thumbnail xmlns:media="http://search.yahoo.com/mrss/" url="' . $url . '" />' . "\n";
+
+        return $suffix;
+    }
+
+    public static function renderFeedHtml($html)
+    {
+        $html = (string) $html;
+        if ($html === '') {
+            return '';
+        }
+
+        $parts = preg_split('/(<pre\b[\s\S]*?<\/pre>|<code\b[\s\S]*?<\/code>)/iu', $html, -1, PREG_SPLIT_DELIM_CAPTURE);
+        foreach ($parts as $index => $part) {
+            if (preg_match('/^<(pre|code)\b/iu', $part)) {
+                continue;
+            }
+
+            $parts[$index] = self::renderFeedHtmlSegment($part);
+        }
+
+        return implode('', $parts);
+    }
+
+    private static function filterFeedShortcodes($xml)
+    {
+        $xml = preg_replace_callback('/<!\[CDATA\[([\s\S]*?)\]\]>/u', function ($matches) {
+            return '<![CDATA[' . str_replace(']]>', ']]]]><![CDATA[>', self::renderFeedHtml($matches[1])) . ']]>';
+        }, $xml);
+
+        return preg_replace_callback('/(<(title|description|summary)\b[^>]*>)(?!<!\[CDATA\[)([\s\S]*?)(<\/\2>)/iu', function ($matches) {
+            $text = html_entity_decode($matches[3], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $text = trim(strip_tags(self::renderFeedHtml($text)));
+            return $matches[1] . self::xml($text) . $matches[4];
+        }, $xml);
+    }
+
+    private static function renderFeedHtmlSegment($html)
+    {
+        $colors = 'caramel|red|orange|yellow|green|cyan|blue|purple';
+        $html = self::decodeShortcodeBrackets($html);
+
+        $html = preg_replace_callback('/<details\b[^>]*class=(["\'])[^"\']*\bqiwi-fold\b[^"\']*\1[^>]*>\s*<summary>([\s\S]*?)<\/summary>\s*<div\b[^>]*class=(["\'])[^"\']*\bqiwi-fold-body\b[^"\']*\3[^>]*>([\s\S]*?)<\/div>\s*<\/details>/iu', function ($matches) {
+            $title = trim(strip_tags($matches[2]));
+            $body = isset($matches[4]) ? $matches[4] : '';
+            return self::feedBlock($title, $body);
+        }, $html);
+
+        $html = preg_replace_callback('/<aside\b[^>]*class=(["\'])[^"\']*\bqiwi-callout\b[^"\']*\1[^>]*>([\s\S]*?)<\/aside>/iu', function ($matches) {
+            return '<blockquote>' . $matches[2] . '</blockquote>';
+        }, $html);
+
+        for ($i = 0; $i < 4; $i++) {
+            $next = preg_replace_callback('/\[fold([^\]]*)\]([\s\S]*?)\[\/fold\]/iu', function ($matches) {
+                $attrs = self::parseShortcodeAttrs(isset($matches[1]) ? $matches[1] : '');
+                $title = isset($attrs['title']) ? trim($attrs['title']) : '';
+                return self::feedBlock($title, isset($matches[2]) ? $matches[2] : '');
+            }, $html);
+
+            if ($next === $html) {
+                break;
+            }
+
+            $html = $next;
+        }
+
+        for ($i = 0; $i < 4; $i++) {
+            $next = preg_replace_callback('/\[gear([^\]]*)\]([\s\S]*?)\[\/gear\]/iu', function ($matches) {
+                $attrs = self::parseShortcodeAttrs(isset($matches[1]) ? $matches[1] : '');
+                $title = isset($attrs['title']) ? trim($attrs['title']) : '';
+                $body = isset($matches[2]) ? $matches[2] : '';
+                $body = preg_replace('/^(?:\s*<br\s*\/?>\s*)+/iu', '', $body);
+                $body = preg_replace('/(?:\s*<br\s*\/?>\s*)+$/iu', '', $body);
+                return self::feedBlock($title, $body);
+            }, $html);
+
+            if ($next === $html) {
+                break;
+            }
+
+            $html = $next;
+        }
+
+        for ($i = 0; $i < 4; $i++) {
+            $next = preg_replace_callback('/\[reward([^\]]*)\]([\s\S]*?)\[\/reward\]/iu', function ($matches) {
+                $attrs = self::parseShortcodeAttrs(isset($matches[1]) ? $matches[1] : '');
+                $name = isset($attrs['name']) ? trim($attrs['name']) : '';
+                $amount = isset($attrs['amount']) ? trim($attrs['amount']) : '';
+                $body = isset($matches[2]) ? $matches[2] : '';
+                return self::feedBlock(trim(($name !== '' ? $name : '匿名') . ' 打赏 ' . $amount . ' 元'), $body);
+            }, $html);
+
+            if ($next === $html) {
+                break;
+            }
+
+            $html = $next;
+        }
+
+        for ($i = 0; $i < 4; $i++) {
+            $next = preg_replace_callback('/\[callout([^\]]*)\]([\s\S]*?)\[\/callout\]/iu', function ($matches) {
+                $attrs = self::parseShortcodeAttrs(isset($matches[1]) ? $matches[1] : '');
+                $title = isset($attrs['title']) ? trim($attrs['title']) : '';
+                $body = isset($matches[2]) ? $matches[2] : '';
+                return '<blockquote>' . ($title !== '' ? '<p><strong>' . self::escapeHtml(strip_tags($title)) . '</strong></p>' : '') . $body . '</blockquote>';
+            }, $html);
+
+            if ($next === $html) {
+                break;
+            }
+
+            $html = $next;
+        }
+
+        $html = preg_replace_callback('/\[button\b([^\]]*)\]([\s\S]*?)\[\/button\]/iu', function ($matches) {
+            $attrs = self::parseShortcodeAttrs(isset($matches[1]) ? $matches[1] : '');
+            $href = self::safeUrl(isset($attrs['href']) ? $attrs['href'] : (isset($attrs['url']) ? $attrs['url'] : '#'));
+            $label = trim($matches[2]) !== '' ? $matches[2] : self::escapeHtml($href);
+            return '<a href="' . self::escapeHtml($href) . '">' . $label . '</a>';
+        }, $html);
+
+        $html = preg_replace_callback('/\[link\b([^\]]*)\]([\s\S]*?)\[\/link\]/iu', function ($matches) {
+            $attrs = self::parseShortcodeAttrs(isset($matches[1]) ? $matches[1] : '');
+            $href = self::safeUrl(isset($attrs['href']) ? $attrs['href'] : (isset($attrs['url']) ? $attrs['url'] : '#'));
+            $label = trim($matches[2]) !== '' ? $matches[2] : self::escapeHtml($href);
+            return '<a href="' . self::escapeHtml($href) . '">' . $label . '</a>';
+        }, $html);
+
+        $html = preg_replace_callback('/\[(?:not-by-ai|notbyai)([^\]]*)\](?:\s*\[\/(?:not-by-ai|notbyai)\])?/iu', function ($matches) {
+            $attrs = self::parseShortcodeAttrs(isset($matches[1]) ? $matches[1] : '');
+            $href = self::safeUrl(isset($attrs['href']) ? $attrs['href'] : (isset($attrs['url']) ? $attrs['url'] : 'https://notbyai.fyi/'));
+            $label = isset($attrs['label']) && trim($attrs['label']) !== '' ? trim($attrs['label']) : 'Not By AI';
+            return '<a href="' . self::escapeHtml($href) . '">' . self::escapeHtml(strip_tags($label)) . '</a>';
+        }, $html);
+
+        $html = preg_replace('/\[(?:attachment|file)\b[^\]]*\](?:\s*\[\/(?:attachment|file)\])?/iu', '<em>本文包含受保护附件，请访问原文下载。</em>', $html);
+
+        for ($i = 0; $i < 4; $i++) {
+            $next = preg_replace('/\[buttons(?:\s+[^\]]*)?\]([\s\S]*?)\[\/buttons\]/iu', '<div>$1</div>', $html);
+            if ($next === $html) {
+                break;
+            }
+            $html = $next;
+        }
+
+        $html = preg_replace('/\[badge(?:\s+[^\]]*)?\]([\s\S]*?)\[\/badge\]/iu', '<strong>$1</strong>', $html);
+
+        $html = preg_replace_callback('/\[mark(?:\s+color=(["\']?)([a-zA-Z]+)\1)?\]([\s\S]*?)\[\/mark\]/iu', function ($matches) {
+            $color = self::shortcodeColor(isset($matches[2]) && $matches[2] !== '' ? $matches[2] : 'yellow', true);
+            return '<span style="background-color:' . $color . ';">' . $matches[3] . '</span>';
+        }, $html);
+
+        $html = preg_replace_callback('/\[(' . $colors . ')\]([\s\S]*?)\[\/\1\]/iu', function ($matches) {
+            return '<span style="color:' . self::shortcodeColor($matches[1], false) . ';">' . $matches[2] . '</span>';
+        }, $html);
+
+        $html = preg_replace_callback('/<span\b([^>]*class=(["\'])[^"\']*\bqiwi-text-(' . $colors . ')\b[^"\']*\2[^>]*)>/iu', function ($matches) {
+            return '<span style="color:' . self::shortcodeColor($matches[3], false) . ';">';
+        }, $html);
+
+        $html = preg_replace_callback('/<span\b([^>]*class=(["\'])[^"\']*\bqiwi-mark-(' . $colors . ')\b[^"\']*\2[^>]*)>/iu', function ($matches) {
+            return '<span style="background-color:' . self::shortcodeColor($matches[3], true) . ';">';
+        }, $html);
+
+        $html = preg_replace('/\[\/?(?:mark|fold|badge|button|buttons|callout|link|attachment|file|gear|reward|not-by-ai|notbyai|' . $colors . ')(?:\s+[^\]]*)?\]/iu', '', $html);
+
+        return $html;
+    }
+
+    private static function decodeShortcodeBrackets($html)
+    {
+        return strtr((string) $html, array(
+            '&#91;' => '[',
+            '&#x5b;' => '[',
+            '&#x5B;' => '[',
+            '&lbrack;' => '[',
+            '&#93;' => ']',
+            '&#x5d;' => ']',
+            '&#x5D;' => ']',
+            '&rbrack;' => ']',
+        ));
+    }
+
+    private static function feedBlock($title, $body)
+    {
+        $title = trim(strip_tags((string) $title));
+        $titleHtml = $title !== '' ? '<p><strong>' . self::escapeHtml($title) . '</strong></p>' : '';
+        return '<div>' . $titleHtml . '<div>' . $body . '</div></div>';
+    }
+
+    private static function parseShortcodeAttrs($text)
+    {
+        $text = html_entity_decode((string) $text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $attrs = array();
+        if ($text === '') {
+            return $attrs;
+        }
+
+        if (preg_match_all('/([a-zA-Z][a-zA-Z0-9_-]*)\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s\]]+))/u', $text, $matches, PREG_SET_ORDER)) {
+            foreach ($matches as $match) {
+                $name = strtolower($match[1]);
+                $value = '';
+                foreach (array(2, 3, 4) as $index) {
+                    if (isset($match[$index]) && $match[$index] !== '') {
+                        $value = $match[$index];
+                        break;
+                    }
+                }
+                $attrs[$name] = trim($value);
+            }
+        }
+
+        return $attrs;
+    }
+
+    private static function safeUrl($url)
+    {
+        $url = trim(html_entity_decode((string) $url, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        if ($url === '') {
+            return '#';
+        }
+
+        return preg_match('/^(https?:\/\/|mailto:|tel:|\/|#)/i', $url) ? $url : '#';
+    }
+
+    private static function shortcodeColor($color, $isBackground)
+    {
+        $map = array(
+            'caramel' => $isBackground ? '#f0e4d3' : '#8b7355',
+            'red' => $isBackground ? '#fde2e2' : '#d64545',
+            'orange' => $isBackground ? '#fdebd7' : '#d97a20',
+            'yellow' => $isBackground ? '#fff2bf' : '#a87900',
+            'green' => $isBackground ? '#dff3e5' : '#2f8f4e',
+            'cyan' => $isBackground ? '#d9f3f5' : '#168c96',
+            'blue' => $isBackground ? '#dfeaff' : '#286bd6',
+            'purple' => $isBackground ? '#ede5ff' : '#7b55c7',
+        );
+
+        $color = strtolower(trim((string) $color));
+        return isset($map[$color]) ? $map[$color] : ($isBackground ? $map['yellow'] : $map['blue']);
+    }
+
+    public static function feedAvatarUrl($options)
+    {
+        $settingsAvatar = self::setting('avatarUrl', '');
+        if ($settingsAvatar !== '') {
+            return self::normalizeImageUrl($settingsAvatar, $options);
+        }
+
+        foreach (array('sidebarProfileAvatar', 'aboutAvatar', 'logoUrl') as $name) {
+            $value = self::optionValue($options, $name);
+            if ($value !== '') {
+                $url = self::normalizeImageUrl($value, $options);
+                if ($url !== '') {
+                    return $url;
+                }
+            }
+        }
+
+        return self::themeAssetUrl('apple-touch-icon.png', $options);
+    }
+
+    public static function normalizeFeedImageUrl($url, $options)
+    {
+        return self::normalizeImageUrl($url, $options);
+    }
+
+    public static function imageMimeType($url)
+    {
+        $path = parse_url((string) $url, PHP_URL_PATH);
+        $extension = strtolower(pathinfo((string) $path, PATHINFO_EXTENSION));
+        $map = array(
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            'webp' => 'image/webp',
+            'avif' => 'image/avif',
+            'svg' => 'image/svg+xml',
+        );
+
+        return isset($map[$extension]) ? $map[$extension] : '';
+    }
+
+    private static function normalizeImageUrl($url, $options)
+    {
+        $url = trim(html_entity_decode((string) $url, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        if ($url === '') {
+            return '';
+        }
+
+        if (preg_match('/^https?:\/\//i', $url)) {
+            return $url;
+        }
+
+        if (strpos($url, '//') === 0) {
+            $scheme = parse_url(self::siteBaseUrl($options), PHP_URL_SCHEME);
+            return ($scheme !== '' ? $scheme : 'https') . ':' . $url;
+        }
+
+        if (preg_match('/^(data:|javascript:|mailto:|tel:)/i', $url)) {
+            return '';
+        }
+
+        $base = self::siteBaseUrl($options);
+        if ($base === '') {
+            return '';
+        }
+
+        return rtrim($base, '/') . '/' . ltrim($url, '/');
+    }
+
+    private static function themeAssetUrl($path, $options)
+    {
+        $themeUrl = self::optionValue($options, 'themeUrl');
+        if ($themeUrl !== '') {
+            return rtrim($themeUrl, '/') . '/' . ltrim($path, '/');
+        }
+
+        $base = self::siteBaseUrl($options);
+        return $base !== '' ? rtrim($base, '/') . '/usr/themes/qiwi/' . ltrim($path, '/') : '';
+    }
+
+    private static function siteBaseUrl($options)
+    {
+        $siteUrl = self::optionValue($options, 'siteUrl');
+        return $siteUrl !== '' ? rtrim($siteUrl, '/') : '';
+    }
+
+    private static function normalUrl($url)
+    {
+        return trim((string) $url);
+    }
+
+    private static function xml($value)
+    {
+        return htmlspecialchars((string) $value, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+    }
+
+    private static function escapeHtml($value)
+    {
+        return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+    }
+}
