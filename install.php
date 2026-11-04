@@ -763,7 +763,7 @@ function install_step_1_perform()
             $errors[] = $error;
         }
     }
-
+   */
     $uploadDir = '/usr/uploads';
     $realUploadDir = \Typecho\Common::url($uploadDir, __TYPECHO_ROOT_DIR__);
     $writeable = true;
@@ -782,7 +782,7 @@ function install_step_1_perform()
     if (!$writeable) {
         $errors[] = _t('上传目录无法写入, 请手动将安装目录下的 %s 目录的权限设置为可写然后继续升级', $uploadDir);
     }
-
+    */
     if (empty($errors)) {
         install_success(2);
     } else {
